@@ -44,27 +44,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(uploadsDir));
 
-// Public settings endpoint for form
-app.get('/api/settings', async (req, res) => {
-  try {
-    const Settings = require('./models/Settings');
-    const memberLimitSetting = await Settings.findOne({ key: 'memberLimit' });
-    const groupLinkSetting = await Settings.findOne({ key: 'groupLink' });
-    
-    res.json({
-      success: true,
-      memberLimit: memberLimitSetting ? memberLimitSetting.value : 700,
-      groupLink: groupLinkSetting ? groupLinkSetting.value : 'https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1'
-    });
-  } catch (error) {
-    res.json({
-      success: true,
-      memberLimit: 700,
-      groupLink: 'https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1'
-    });
-  }
-});
-
 // View engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -110,7 +89,7 @@ app.post('/admin/upload-vcf', upload.single('vcfFile'), (req, res) => {
   res.json({ success: true, message: 'VCF uploaded', filename: req.file.filename });
 });
 
-// Get uploaded VCF info - FIXED
+// Get uploaded VCF info
 app.get('/api/vcf-status', async (req, res) => {
   try {
     let files = [];
@@ -136,6 +115,27 @@ app.get('/api/vcf-status', async (req, res) => {
   } catch (error) {
     console.error('VCF status error:', error);
     res.json({ success: true, hasUpload: false, filename: null, visible: false });
+  }
+});
+
+// Public settings endpoint — NO HARDCODED 700
+app.get('/api/settings', async (req, res) => {
+  try {
+    const Settings = require('./models/Settings');
+    const memberLimitSetting = await Settings.findOne({ key: 'memberLimit' });
+    const groupLinkSetting = await Settings.findOne({ key: 'groupLink' });
+
+    res.json({
+      success: true,
+      memberLimit: memberLimitSetting ? memberLimitSetting.value : 500,
+      groupLink: groupLinkSetting ? groupLinkSetting.value : 'https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1'
+    });
+  } catch (error) {
+    res.json({
+      success: true,
+      memberLimit: 500,
+      groupLink: 'https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1'
+    });
   }
 });
 
