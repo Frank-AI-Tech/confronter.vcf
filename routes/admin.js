@@ -46,7 +46,7 @@ function getVcfDaysLeft(filename) {
     if (!timestamp) return 30;
     const fileDate = new Date(timestamp);
     const now = new Date();
-    const expiryDays = 30; // default expiry
+    const expiryDays = 30;
     const diffDays = Math.ceil((fileDate.getTime() + expiryDays * 86400000 - now.getTime()) / 86400000);
     return Math.max(0, diffDays);
   } catch (e) {
@@ -66,8 +66,8 @@ router.get('/', async (req, res) => {
       const verifiedCount = await Member.countDocuments({ verified: true });
       const vcfStatus = await getVcfStatus();
 
-      // Fetch settings with defaults
-      const memberLimit = await getSetting('memberLimit', 800);
+      // ALL VALUES FROM SETTINGS DB — NO HARDCODED 700
+      const memberLimit = await getSetting('memberLimit', 500);
       const groupLink = await getSetting('groupLink', '');
       const vcfExpiryDays = await getSetting('vcfExpiryDays', 30);
       const vcfDaysLeft = getVcfDaysLeft(vcfStatus.filename);
@@ -285,7 +285,6 @@ router.delete('/api/members/:id', async (req, res) => {
 
 // ─── BULK OPERATIONS ───────────────────────────────────────
 
-// POST /admin/api/members/bulk-verify
 router.post('/api/members/bulk-verify', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -304,7 +303,6 @@ router.post('/api/members/bulk-verify', async (req, res) => {
   }
 });
 
-// POST /admin/api/members/bulk-unverify
 router.post('/api/members/bulk-unverify', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -323,7 +321,6 @@ router.post('/api/members/bulk-unverify', async (req, res) => {
   }
 });
 
-// POST /admin/api/members/bulk-delete
 router.post('/api/members/bulk-delete', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -344,7 +341,6 @@ router.post('/api/members/bulk-delete', async (req, res) => {
 
 // ─── SETTINGS ──────────────────────────────────────────────
 
-// PUT /admin/api/settings
 router.put('/api/settings', async (req, res) => {
   const password = req.body.password || req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -372,7 +368,6 @@ router.put('/api/settings', async (req, res) => {
 
 // ─── VCF ───────────────────────────────────────────────────
 
-// Toggle VCF visibility
 router.post('/toggle-vcf', async (req, res) => {
   const password = req.body.password || req.query.password;
   if (password !== ADMIN_PASSWORD) {
@@ -397,7 +392,6 @@ router.post('/toggle-vcf', async (req, res) => {
   }
 });
 
-// POST /admin/delete-vcf
 router.post('/delete-vcf', async (req, res) => {
   const password = req.body.password || req.query.password;
   if (password !== ADMIN_PASSWORD) {
@@ -411,32 +405,7 @@ router.post('/delete-vcf', async (req, res) => {
     files.forEach(f => {
       try { fs.unlinkSync(path.join(uploadsDir, f)); } catch (e) {}
     });
-// Live count refresh — matches form page exactly
-async function refreshStats() {
-  try {
-    const res = await fetch('/api/members/count');
-    const data = await res.json();
-    if (data.success) {
-      const count = data.count;
-      const limit = memberLimit;
-      const remaining = Math.max(0, limit - count);
-      const pct = Math.round((count / limit) * 100);
 
-      document.getElementById('statTotal').textContent = count;
-      document.getElementById('statRemaining').textContent = remaining;
-      document.getElementById('statCapacity').textContent = pct + '%';
-      document.getElementById('progressText').textContent = count + ' / ' + limit;
-      document.getElementById('progressBar').style.width = pct + '%';
-    }
-  } catch (e) {}
-}
-
-// Refresh every 10 seconds to stay in sync with form
-setInterval(refreshStats, 10000);
-refreshStats();
-
-  
-    // Also hide VCF from form
     await setSetting('vcfVisible', false);
 
     res.json({ success: true, message: 'VCF removed' });
@@ -447,7 +416,6 @@ refreshStats();
 
 // ─── EXPORTS ───────────────────────────────────────────────
 
-// GET /admin/export - JSON export
 router.get('/export', async (req, res) => {
   const password = req.query.password;
   if (password !== ADMIN_PASSWORD) {
@@ -469,7 +437,6 @@ router.get('/export', async (req, res) => {
   }
 });
 
-// GET /admin/export-csv - CSV export
 router.get('/export-csv', async (req, res) => {
   const password = req.query.password;
   if (password !== ADMIN_PASSWORD) {
@@ -492,7 +459,6 @@ router.get('/export-csv', async (req, res) => {
   }
 });
 
-// GET /admin/export-vcf - Export all members as combined VCF
 router.get('/export-vcf', async (req, res) => {
   const password = req.query.password;
   if (password !== ADMIN_PASSWORD) {
