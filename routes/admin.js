@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
         members, 
         totalCount, 
         verifiedCount,
-        limit: 700,
+        memberLimit: 700,              // <-- FIXED: was `limit`, now `memberLimit`
         remaining: Math.max(0, 700 - totalCount),
         password,
         vcfStatus
