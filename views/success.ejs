@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Success - Confronter Tech Wizard Gains</title>
+  <title>Verified - Confronter Tech Wizard Gains</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <style>
     :root {
@@ -102,7 +102,7 @@
 
   <div class="card">
     <div class="icon"><i class="fas fa-check"></i></div>
-    <h1>Welcome Aboard!</h1>
+    <h1>Verified Successfully!</h1>
     <p>You joined <strong>Confronter Tech Wizard Gains</strong></p>
     <div class="timer" id="timer">2</div>
     <p style="font-size: 0.8rem; color: var(--text-secondary);">Redirecting...</p>
@@ -110,6 +110,7 @@
   </div>
 
   <script>
+    // Theme
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -123,6 +124,18 @@
       themeIcon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     });
 
+    // Speech
+    try {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance('You were verified successfully. Welcome to Confronter Tech Wizard Gains.');
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+        speechSynthesis.speak(utterance);
+      }
+    } catch (e) { console.log('Speech not supported'); }
+
+    // Countdown
     let sec = 2;
     const t = document.getElementById('timer');
     setInterval(() => {
