@@ -81,7 +81,9 @@
     p { color: var(--text-secondary); margin-bottom: 6px; font-size: 0.9rem; }
     .timer { font-size: 2.2rem; font-weight: 800; margin: 14px 0; }
     .btn {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
       padding: 12px 28px;
       background: var(--text);
       color: var(--bg);
@@ -91,8 +93,26 @@
       font-size: 0.9rem;
       margin-top: 16px;
       transition: opacity 0.2s;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
     }
     .btn:hover { opacity: 0.85; }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--accent);
+      background: rgba(128,128,128,0.05);
+    }
+    .actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 16px;
+    }
   </style>
 </head>
 <body>
@@ -104,9 +124,14 @@
     <div class="icon"><i class="fas fa-check"></i></div>
     <h1>Verified Successfully!</h1>
     <p>You joined <strong>Confronter Tech Wizard Gains</strong></p>
-    <div class="timer" id="timer">2</div>
+    <div class="timer" id="timer">5</div>
     <p style="font-size: 0.8rem; color: var(--text-secondary);">Redirecting...</p>
-    <a href="/form" class="btn">Go to Form</a>
+    <div class="actions">
+      <a href="/form" class="btn">Go to Form</a>
+      <a href="/form" class="btn btn-secondary">
+        <i class="fas fa-plus"></i> Go Back & Add Another Number
+      </a>
+    </div>
   </div>
 
   <script>
@@ -133,12 +158,15 @@
       }
     } catch (e) { console.log('Speech not supported'); }
 
-    let sec = 2;
+    let sec = 5;
     const t = document.getElementById('timer');
-    setInterval(() => {
+    const interval = setInterval(() => {
       sec--;
       t.textContent = sec;
-      if (sec <= 0) window.location.href = '/form';
+      if (sec <= 0) {
+        clearInterval(interval);
+        window.location.href = '/form';
+      }
     }, 1000);
   </script>
 </body>
