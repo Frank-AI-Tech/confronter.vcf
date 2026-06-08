@@ -10,6 +10,9 @@ router.post('/', async (req, res) => {
   try {
     const { fullName, phone, email, countryCode = '+1' } = req.body;
 
+    // Log incoming request for debugging
+    console.log('Form submission:', { fullName, phone, email, countryCode });
+
     if (!fullName || !phone || !email) {
       return res.status(400).json({
         success: false,
@@ -25,19 +28,33 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const fullPhone = phone.startsWith('+') ? phone : countryCode + phone;
+    // Clean phone number - remove spaces, dashes, parentheses
+    const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+    const fullPhone = cleanPhone.startsWith('+') ? cleanPhone : countryCode + cleanPhone;
+
+    console.log('Validating phone:', fullPhone);
 
     if (!isValidPhoneNumber(fullPhone)) {
       return res.status(400).json({
         success: false,
-        message: `Invalid phone number for country code ${countryCode}`
+        message: `Invalid phone number for country code ${countryCode}. Example: for +1 use 2345678900`
       });
     }
 
     const parsedPhone = parsePhoneNumberFromString(fullPhone);
+    if (!parsedPhone) {
+      return res.status(400).json({
+        success: false,
+        message: 'Could not parse phone number'
+      });
+    }
+
     const formattedPhone = parsedPhone.formatInternational();
     const e164Phone = parsedPhone.format('E.164');
 
+    console.log('Parsed phone:', { formattedPhone, e164Phone });
+
+    // Check for duplicate by phone
     const existingByPhone = await Member.findOne({ phone: e164Phone });
     if (existingByPhone) {
       return res.status(409).json({
@@ -47,6 +64,7 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Check for duplicate by email
     const existingByEmail = await Member.findOne({ email: email.toLowerCase() });
     if (existingByEmail) {
       return res.status(409).json({
@@ -56,6 +74,7 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Check member limit
     const memberCount = await Member.countDocuments();
     if (memberCount >= MEMBER_LIMIT) {
       return res.status(403).json({
@@ -64,17 +83,21 @@ router.post('/', async (req, res) => {
       });
     }
 
+    // Create member
     const member = new Member({
       fullName: fullName.trim(),
       phone: e164Phone,
       email: email.toLowerCase().trim(),
       countryCode,
       formattedPhone,
+      verified: false,
+      notes: '',
       ipAddress: req.ip,
       userAgent: req.headers['user-agent']
     });
 
     await member.save();
+    console.log('Member saved successfully:', member._id);
 
     res.status(201).json({
       success: true,
@@ -90,7 +113,9 @@ router.post('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('SERVER ERROR in /api/members:', error.message);
+    console.error('Full error:', error);
+
     if (error.code === 11000) {
       return res.status(409).json({
         success: false,
@@ -98,7 +123,12 @@ router.post('/', async (req, res) => {
         duplicate: true
       });
     }
-    res.status(500).json({ success: false, message: 'Server error' });
+
+    // Return actual error message for debugging (remove in production)
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error: ' + error.message 
+    });
   }
 });
 
@@ -113,7 +143,8 @@ router.get('/count', async (req, res) => {
       limit: MEMBER_LIMIT
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error in /count:', error.message);
+    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
 });
 
@@ -124,7 +155,8 @@ router.get('/check', async (req, res) => {
     const query = {};
 
     if (phone) {
-      const fullPhone = phone.startsWith('+') ? phone : '+1' + phone;
+      const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
+      const fullPhone = cleanPhone.startsWith('+') ? cleanPhone : '+1' + cleanPhone;
       query.phone = fullPhone;
     }
     if (email) query.email = email.toLowerCase();
@@ -136,7 +168,8 @@ router.get('/check', async (req, res) => {
       field: exists ? (exists.phone === query.phone ? 'phone' : 'email') : null
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error('Error in /check:', error.message);
+    res.status(500).json({ success: false, message: 'Server error: ' + error.message });
   }
 });
 
