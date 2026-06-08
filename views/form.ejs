@@ -488,6 +488,26 @@
       margin: 14px 0;
     }
 
+    /* NEW: Go back button in overlay */
+    .overlay-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .overlay-actions .btn {
+      margin-top: 0;
+    }
+    .overlay-actions .btn-secondary {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .overlay-actions .btn-secondary:hover {
+      border-color: var(--accent);
+      background: rgba(128,128,128,0.05);
+    }
+
     .footer {
       text-align: center;
       margin-top: 20px;
@@ -687,6 +707,15 @@
       <p>You joined <strong>Confronter Tech Wizard Gains</strong></p>
       <div class="timer" id="redirectTimer">3</div>
       <p style="font-size: 0.8rem; color: var(--text-secondary);">Redirecting to WhatsApp group...</p>
+      <!-- NEW: Action buttons -->
+      <div class="overlay-actions">
+        <a href="#" class="btn" id="joinWhatsAppBtn" target="_blank">
+          <i class="fab fa-whatsapp"></i> Join WhatsApp Now
+        </a>
+        <button class="btn btn-secondary" onclick="resetForm()">
+          <i class="fas fa-arrow-left"></i> Go Back & Add Another Number
+        </button>
+      </div>
     </div>
   </div>
 
@@ -761,9 +790,11 @@
     const vcfMeta = document.getElementById('vcfMeta');
     const vcfExpiry = document.getElementById('vcfExpiry');
     const vcfDownloadBtn = document.getElementById('vcfDownloadBtn');
+    const joinWhatsAppBtn = document.getElementById('joinWhatsAppBtn');
 
     let groupLink = 'https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1';
     let memberLimit = 700;
+    let redirectTimer = null;
 
     async function loadSettings() {
       try {
@@ -857,6 +888,27 @@
     phoneInput.addEventListener('input', () => { clearTimeout(checkTimeout); checkTimeout = setTimeout(checkDup, 500); });
     emailInput.addEventListener('input', () => { clearTimeout(checkTimeout); checkTimeout = setTimeout(checkDup, 500); });
 
+    // NEW: Reset form to add another number
+    function resetForm() {
+      // Clear timer
+      if (redirectTimer) {
+        clearInterval(redirectTimer);
+        redirectTimer = null;
+      }
+      // Hide overlay
+      successOverlay.classList.remove('show');
+      // Reset form
+      form.reset();
+      // Reset WhatsApp button
+      whatsappBtn.classList.remove('active');
+      whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Join WhatsApp Group <i class="fas fa-lock lock-icon"></i>';
+      // Clear inputs
+      document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+      document.querySelectorAll('.error-msg').forEach(el => el.classList.remove('show'));
+      // Reload count
+      loadCount();
+    }
+
     // Submit
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -886,6 +938,11 @@
         const data = await res.json();
 
         if (data.success) {
+          // Update group link from server response if provided
+          if (data.groupLink) {
+            groupLink = data.groupLink;
+          }
+
           // Speak success message
           speakSuccess();
 
@@ -893,13 +950,18 @@
           whatsappBtn.classList.add('active');
           whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Join WhatsApp Group';
 
+          // Set Join Now button link
+          joinWhatsAppBtn.href = groupLink;
+
           successOverlay.classList.add('show');
           let sec = 3;
-          const timer = setInterval(() => {
+          document.getElementById('redirectTimer').textContent = sec;
+          redirectTimer = setInterval(() => {
             sec--;
             document.getElementById('redirectTimer').textContent = sec;
             if (sec <= 0) {
-              clearInterval(timer);
+              clearInterval(redirectTimer);
+              redirectTimer = null;
               // Redirect to WhatsApp group after speech
               window.location.href = groupLink;
             }
