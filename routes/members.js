@@ -10,6 +10,13 @@ router.post('/', async (req, res) => {
   try {
     const { fullName, phone, email, countryCode = '+1' } = req.body;
 
+    // Example: wherever you have res.render('admin-dashboard', ...)
+res.render('admin-dashboard', {
+    totalCount: await Member.countDocuments(), // or however you get this
+    memberLimit: 100, // <-- ADD THIS (or fetch from config/DB)
+    // ... other existing variables
+});
+
     // Log incoming request for debugging
     console.log('Form submission:', { fullName, phone, email, countryCode });
 
