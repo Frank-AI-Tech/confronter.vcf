@@ -14,10 +14,10 @@
       --border: #222222;
       --input-bg: #111111;
       --accent: #ffffff;
-      --accent-hover: #cccccc;
       --error: #ff4444;
       --success: #00ff88;
       --warning: #ffaa00;
+      --whatsapp: #25d366;
     }
 
     [data-theme="light"] {
@@ -28,10 +28,10 @@
       --border: #dddddd;
       --input-bg: #ffffff;
       --accent: #000000;
-      --accent-hover: #333333;
       --error: #cc0000;
       --success: #00aa44;
       --warning: #cc8800;
+      --whatsapp: #128c7e;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -66,11 +66,27 @@
       transition: all 0.3s;
       z-index: 100;
     }
+    .theme-toggle:hover { transform: scale(1.1); border-color: var(--accent); }
 
-    .theme-toggle:hover {
-      transform: scale(1.1);
-      border-color: var(--accent);
+    .status-bar {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      z-index: 100;
     }
+    .status-bar i { font-size: 14px; }
+    .status-bar .live-clock { font-family: monospace; font-size: 0.9rem; color: var(--text); }
+    .battery-info { display: flex; align-items: center; gap: 6px; }
+    .battery-icon { position: relative; width: 22px; height: 12px; border: 1.5px solid var(--text-secondary); border-radius: 3px; padding: 2px; }
+    .battery-icon::after { content: ''; position: absolute; right: -4px; top: 3px; width: 2px; height: 4px; background: var(--text-secondary); border-radius: 0 1px 1px 0; }
+    .battery-fill { height: 100%; background: var(--success); border-radius: 1px; transition: width 0.3s; }
+    .battery-low { background: var(--error) !important; }
+    .battery-charging { color: var(--success); }
 
     .container {
       width: 100%;
@@ -92,20 +108,16 @@
 
     .logo {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
-    .logo-icon {
-      width: 56px;
-      height: 56px;
-      background: var(--text);
-      color: var(--bg);
-      border-radius: 14px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      margin-bottom: 14px;
+    .logo img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 16px;
+      border: 2px solid var(--border);
     }
 
     h1 {
@@ -119,8 +131,25 @@
       font-size: 0.85rem;
     }
 
+    .whatsapp-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 10px 20px;
+      background: var(--whatsapp);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 24px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .whatsapp-link:hover { opacity: 0.85; transform: translateY(-1px); }
+    .whatsapp-link i { font-size: 1rem; }
+
     .progress-wrap {
-      margin-bottom: 20px;
+      margin: 20px 0;
     }
 
     .progress-bar {
@@ -245,6 +274,10 @@
       cursor: pointer;
       transition: all 0.2s;
       margin-top: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
 
     .btn:hover {
@@ -266,7 +299,6 @@
       border-top-color: var(--bg);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
-      margin: 0 auto;
     }
 
     [data-theme="light"] .btn .spinner {
@@ -282,7 +314,7 @@
     .overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.7);
+      background: rgba(0,0,0,0.8);
       display: none;
       align-items: center;
       justify-content: center;
@@ -355,10 +387,20 @@
     @media (max-width: 480px) {
       .card { padding: 24px 20px; }
       h1 { font-size: 1.15rem; }
+      .status-bar { font-size: 0.7rem; gap: 10px; }
+      .logo img { width: 90px; height: 90px; }
     }
   </style>
 </head>
 <body>
+  <div class="status-bar">
+    <div class="live-clock" id="liveClock">00:00:00</div>
+    <div class="battery-info" id="batteryInfo">
+      <i class="fas fa-battery-half" id="batteryIcon"></i>
+      <span id="batteryPercent">--%</span>
+    </div>
+  </div>
+
   <button class="theme-toggle" id="themeToggle" title="Toggle theme">
     <i class="fas fa-sun" id="themeIcon"></i>
   </button>
@@ -366,9 +408,12 @@
   <div class="container">
     <div class="card">
       <div class="logo">
-        <div class="logo-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <img src="https://files.catbox.moe/5e39uh.png" alt="Confronter Tech Wizard Gains" id="logoImg">
         <h1>Confronter Tech Wizard Gains</h1>
         <p class="subtitle">Join our exclusive group</p>
+        <a href="https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1" class="whatsapp-link" target="_blank">
+          <i class="fab fa-whatsapp"></i> Join WhatsApp Group
+        </a>
       </div>
 
       <div class="progress-wrap">
@@ -475,7 +520,7 @@
         </div>
 
         <button type="submit" class="btn" id="submitBtn">
-          <span class="btn-text">Join Group</span>
+          <span class="btn-text"><i class="fas fa-shield-halved"></i> Verify & Join</span>
           <div class="spinner"></div>
         </button>
       </form>
@@ -489,7 +534,7 @@
   <div class="overlay" id="successOverlay">
     <div class="overlay-card">
       <div class="overlay-icon"><i class="fas fa-check"></i></div>
-      <h2>Welcome Aboard!</h2>
+      <h2>Verified Successfully!</h2>
       <p>You joined <strong>Confronter Tech Wizard Gains</strong></p>
       <div class="timer" id="redirectTimer">2</div>
       <p style="font-size: 0.8rem; color: var(--text-secondary);">Redirecting...</p>
@@ -512,6 +557,59 @@
       themeIcon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     });
 
+    // Real-time clock
+    function updateClock() {
+      const now = new Date();
+      const time = now.toLocaleTimeString('en-US', { hour12: false });
+      document.getElementById('liveClock').textContent = time;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    // Battery status
+    async function updateBattery() {
+      try {
+        if ('getBattery' in navigator) {
+          const battery = await navigator.getBattery();
+          const percent = Math.round(battery.level * 100);
+          const charging = battery.charging;
+
+          document.getElementById('batteryPercent').textContent = percent + '%';
+
+          let icon = 'fa-battery-';
+          if (percent >= 80) icon += 'full';
+          else if (percent >= 50) icon += 'three-quarters';
+          else if (percent >= 30) icon += 'half';
+          else if (percent >= 15) icon += 'quarter';
+          else icon += 'empty';
+
+          const batteryIcon = document.getElementById('batteryIcon');
+          batteryIcon.className = 'fas ' + icon + (charging ? ' battery-charging' : '');
+
+          battery.addEventListener('levelchange', updateBattery);
+          battery.addEventListener('chargingchange', updateBattery);
+        } else {
+          document.getElementById('batteryInfo').style.display = 'none';
+        }
+      } catch (e) {
+        document.getElementById('batteryInfo').style.display = 'none';
+      }
+    }
+    updateBattery();
+
+    // Speech synthesis
+    function speakSuccess() {
+      try {
+        if ('speechSynthesis' in window) {
+          const utterance = new SpeechSynthesisUtterance('You were verified successfully. Welcome to Confronter Tech Wizard Gains.');
+          utterance.rate = 0.9;
+          utterance.pitch = 1;
+          utterance.volume = 1;
+          speechSynthesis.speak(utterance);
+        }
+      } catch (e) { console.log('Speech not supported'); }
+    }
+
     // Form logic
     const form = document.getElementById('contactForm');
     const submitBtn = document.getElementById('submitBtn');
@@ -525,7 +623,7 @@
         const data = await res.json();
         if (data.success) {
           document.getElementById('progressFill').style.width = (data.count / 700 * 100) + '%';
-          document.getElementById('memberCount').innerHTML = `<span>${data.count}</span> / 700 members (${data.remaining} left)`;
+          document.getElementById('memberCount').innerHTML = '<span>' + data.count + '</span> / 700 members (' + data.remaining + ' left)';
           if (data.count >= 700) {
             fullMessage.classList.add('show');
             form.style.display = 'none';
@@ -555,7 +653,7 @@
         const data = await res.json();
         if (data.exists) {
           duplicateWarning.classList.add('show');
-          document.getElementById('duplicateText').textContent = `This ${data.field} is already registered.`;
+          document.getElementById('duplicateText').textContent = 'This ' + data.field + ' is already registered.';
           submitBtn.disabled = true;
         } else {
           duplicateWarning.classList.remove('show');
@@ -597,13 +695,16 @@
 
         if (data.success) {
           // Check if admin uploaded VCF is available and visible
-          const vcfRes = await fetch('/api/vcf-status');
-          const vcfData = await vcfRes.json();
+          try {
+            const vcfRes = await fetch('/api/vcf-status');
+            const vcfData = await vcfRes.json();
+            if (vcfData.hasUpload && vcfData.visible) {
+              window.location.href = '/download/vcf';
+            }
+          } catch (vcfErr) { console.log('VCF skipped:', vcfErr.message); }
 
-          if (vcfData.hasUpload && vcfData.visible) {
-            // Download admin's uploaded VCF
-            window.location.href = '/download/vcf';
-          }
+          // Speak success message
+          speakSuccess();
 
           successOverlay.classList.add('show');
           let sec = 2;
@@ -622,10 +723,13 @@
           duplicateWarning.classList.add('show');
           document.getElementById('duplicateText').textContent = data.message;
         } else {
-          alert(data.message || 'Error');
+          duplicateWarning.classList.add('show');
+          document.getElementById('duplicateText').textContent = data.message || 'Something went wrong. Please try again.';
         }
       } catch (error) {
-        alert('Network error');
+        console.error('Submit error:', error);
+        duplicateWarning.classList.add('show');
+        document.getElementById('duplicateText').textContent = 'Connection failed. Check your internet or try again.';
       } finally {
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
