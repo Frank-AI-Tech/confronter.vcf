@@ -19,6 +19,7 @@
       --success: #00ff88;
       --warning: #ffaa00;
       --whatsapp: #25d366;
+      --whatsapp-dim: #1a5c2e;
     }
 
     [data-theme="light"] {
@@ -33,6 +34,7 @@
       --success: #00aa44;
       --warning: #cc8800;
       --whatsapp: #128c7e;
+      --whatsapp-dim: #a0c4b8;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -113,39 +115,6 @@
       letter-spacing: 0.5px;
     }
 
-    .battery-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .battery-icon {
-      position: relative;
-      width: 22px;
-      height: 12px;
-      border: 1.5px solid var(--text-secondary);
-      border-radius: 3px;
-      padding: 2px;
-    }
-    .battery-icon::after {
-      content: '';
-      position: absolute;
-      right: -4px;
-      top: 3px;
-      width: 2px;
-      height: 4px;
-      background: var(--text-secondary);
-      border-radius: 0 1px 1px 0;
-    }
-    .battery-fill {
-      height: 100%;
-      background: var(--success);
-      border-radius: 1px;
-      transition: width 0.3s;
-    }
-    .battery-low { background: var(--error) !important; }
-    .battery-charging { color: var(--success); }
-
     .container {
       width: 100%;
       max-width: 440px;
@@ -189,22 +158,45 @@
       font-size: 0.85rem;
     }
 
+    /* WhatsApp button — DIM before form fill, ACTIVE after verification */
     .whatsapp-link {
       display: inline-flex;
       align-items: center;
       gap: 8px;
       margin-top: 12px;
       padding: 10px 20px;
-      background: var(--whatsapp);
-      color: #fff;
+      background: var(--whatsapp-dim);
+      color: rgba(255,255,255,0.4);
       text-decoration: none;
       border-radius: 24px;
       font-size: 0.85rem;
       font-weight: 600;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      cursor: not-allowed;
+      border: 1px solid transparent;
     }
-    .whatsapp-link:hover { opacity: 0.85; transform: translateY(-1px); }
+    .whatsapp-link.active {
+      background: var(--whatsapp);
+      color: #fff;
+      pointer-events: auto;
+      cursor: pointer;
+      border-color: var(--whatsapp);
+      box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+    }
+    .whatsapp-link.active:hover {
+      opacity: 0.85;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(37, 211, 102, 0.4);
+    }
     .whatsapp-link i { font-size: 1rem; }
+    .whatsapp-link .lock-icon {
+      font-size: 0.75rem;
+      margin-left: 4px;
+    }
+    .whatsapp-link.active .lock-icon {
+      display: none;
+    }
 
     .progress-wrap {
       margin: 20px 0;
@@ -369,6 +361,72 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* VCF Download Card */
+    .vcf-download-card {
+      background: linear-gradient(135deg, rgba(0,255,136,0.05), rgba(0,255,136,0.02));
+      border: 1px solid rgba(0,255,136,0.2);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin: 16px 0;
+      display: none;
+      align-items: center;
+      gap: 14px;
+      transition: all 0.3s;
+    }
+    .vcf-download-card.show { display: flex; }
+    .vcf-download-card:hover {
+      border-color: rgba(0,255,136,0.4);
+      background: linear-gradient(135deg, rgba(0,255,136,0.08), rgba(0,255,136,0.03));
+    }
+    .vcf-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(0,255,136,0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--success);
+      flex-shrink: 0;
+    }
+    .vcf-info { flex: 1; }
+    .vcf-info .vcf-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .vcf-info .vcf-meta {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .vcf-info .vcf-expiry {
+      font-size: 0.7rem;
+      color: var(--warning);
+      margin-top: 4px;
+    }
+    .vcf-download-btn {
+      padding: 8px 16px;
+      background: var(--success);
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .vcf-download-btn:hover {
+      opacity: 0.85;
+      transform: scale(1.05);
+    }
+
     .overlay {
       position: fixed;
       inset: 0;
@@ -447,6 +505,7 @@
       h1 { font-size: 1.15rem; }
       .status-bar { flex-wrap: wrap; gap: 8px; }
       .logo img { width: 90px; height: 90px; }
+      .vcf-download-card { flex-direction: column; text-align: center; }
     }
   </style>
 </head>
@@ -485,8 +544,9 @@
         <img src="https://files.catbox.moe/5e39uh.png" alt="Confronter Tech Wizard Gains" id="logoImg">
         <h1>Confronter Tech Wizard Gains</h1>
         <p class="subtitle">Join our exclusive group</p>
-        <a href="https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1" class="whatsapp-link" target="_blank">
+        <a href="https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1" class="whatsapp-link" id="whatsappBtn" target="_blank">
           <i class="fab fa-whatsapp"></i> Join WhatsApp Group
+          <i class="fas fa-lock lock-icon"></i>
         </a>
       </div>
 
@@ -495,6 +555,19 @@
           <div class="progress-fill" id="progressFill"></div>
         </div>
         <div class="count" id="memberCount">Loading...</div>
+      </div>
+
+      <!-- VCF Download Card — visible when admin uploads VCF -->
+      <div class="vcf-download-card" id="vcfCard">
+        <div class="vcf-icon"><i class="fas fa-address-card"></i></div>
+        <div class="vcf-info">
+          <div class="vcf-title" id="vcfFilename">Contact Card</div>
+          <div class="vcf-meta" id="vcfMeta">VCF file available</div>
+          <div class="vcf-expiry" id="vcfExpiry"></div>
+        </div>
+        <a href="/download/vcf" class="vcf-download-btn" id="vcfDownloadBtn" download>
+          <i class="fas fa-download"></i> Download
+        </a>
       </div>
 
       <div class="alert alert-warn" id="fullMessage">
@@ -610,8 +683,8 @@
       <div class="overlay-icon"><i class="fas fa-check"></i></div>
       <h2>Verified Successfully!</h2>
       <p>You joined <strong>Confronter Tech Wizard Gains</strong></p>
-      <div class="timer" id="redirectTimer">2</div>
-      <p style="font-size: 0.8rem; color: var(--text-secondary);">Redirecting...</p>
+      <div class="timer" id="redirectTimer">3</div>
+      <p style="font-size: 0.8rem; color: var(--text-secondary);">Redirecting to WhatsApp group...</p>
     </div>
   </div>
 
@@ -631,7 +704,7 @@
       themeIcon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     });
 
-    // Real-time clock with emoji
+    // Real-time clock
     function updateClock() {
       const now = new Date();
       const time = now.toLocaleTimeString('en-US', { hour12: false });
@@ -649,12 +722,7 @@
           const battery = await navigator.getBattery();
           const percent = Math.round(battery.level * 100);
           const charging = battery.charging;
-
-          document.getElementById('batteryPercent').textContent = percent + '%';
-          if (charging) {
-            document.getElementById('batteryPercent').textContent += ' ⚡';
-          }
-
+          document.getElementById('batteryPercent').textContent = percent + '%' + (charging ? ' ⚡' : '');
           battery.addEventListener('levelchange', updateBattery);
           battery.addEventListener('chargingchange', updateBattery);
         } else {
@@ -685,15 +753,39 @@
     const successOverlay = document.getElementById('successOverlay');
     const duplicateWarning = document.getElementById('duplicateWarning');
     const fullMessage = document.getElementById('fullMessage');
+    const whatsappBtn = document.getElementById('whatsappBtn');
+    const vcfCard = document.getElementById('vcfCard');
+    const vcfFilename = document.getElementById('vcfFilename');
+    const vcfMeta = document.getElementById('vcfMeta');
+    const vcfExpiry = document.getElementById('vcfExpiry');
+    const vcfDownloadBtn = document.getElementById('vcfDownloadBtn');
+
+    let groupLink = 'https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1';
+    let memberLimit = 700;
+
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        const data = await res.json();
+        if (data.success) {
+          memberLimit = data.memberLimit || 700;
+          if (data.groupLink) {
+            groupLink = data.groupLink;
+            whatsappBtn.href = groupLink;
+          }
+        }
+      } catch (e) {}
+    }
+    loadSettings();
 
     async function loadCount() {
       try {
         const res = await fetch('/api/members/count');
         const data = await res.json();
         if (data.success) {
-          document.getElementById('progressFill').style.width = (data.count / 700 * 100) + '%';
-          document.getElementById('memberCount').innerHTML = '<span>' + data.count + '</span> / 700 members (' + data.remaining + ' left)';
-          if (data.count >= 700) {
+          document.getElementById('progressFill').style.width = (data.count / memberLimit * 100) + '%';
+          document.getElementById('memberCount').innerHTML = '<span>' + data.count + '</span> / ' + memberLimit + ' members (' + (memberLimit - data.count) + ' left)';
+          if (data.count >= memberLimit) {
             fullMessage.classList.add('show');
             form.style.display = 'none';
           }
@@ -703,6 +795,35 @@
       }
     }
     loadCount();
+
+    // Load VCF status from admin
+    async function loadVCF() {
+      try {
+        const res = await fetch('/api/vcf-status');
+        const data = await res.json();
+        if (data.success && data.hasUpload && data.visible) {
+          vcfCard.classList.add('show');
+          vcfFilename.textContent = data.filename || 'Contact Card';
+          vcfMeta.textContent = 'VCF file • ' + (data.fileSize || 'Unknown size');
+          if (data.expiryDate) {
+            const daysLeft = Math.ceil((new Date(data.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
+            vcfExpiry.textContent = daysLeft > 0 ? '⏳ Expires in ' + daysLeft + ' days' : '⚠️ Expired';
+            if (daysLeft <= 0) {
+              vcfDownloadBtn.style.opacity = '0.4';
+              vcfDownloadBtn.style.pointerEvents = 'none';
+              vcfDownloadBtn.innerHTML = '<i class="fas fa-lock"></i> Expired';
+            }
+          } else {
+            vcfExpiry.textContent = '';
+          }
+        } else {
+          vcfCard.classList.remove('show');
+        }
+      } catch (e) {
+        vcfCard.classList.remove('show');
+      }
+    }
+    loadVCF();
 
     // Real-time duplicate check
     let checkTimeout;
@@ -763,29 +884,22 @@
         const data = await res.json();
 
         if (data.success) {
-          // Check if admin uploaded VCF is available and visible
-          try {
-            const vcfRes = await fetch('/api/vcf-status');
-            const vcfData = await vcfRes.json();
-            if (vcfData.hasUpload && vcfData.visible) {
-              window.location.href = '/download/vcf';
-            }
-          } catch (vcfErr) { console.log('VCF skipped:', vcfErr.message); }
-
           // Speak success message
           speakSuccess();
 
+          // Activate WhatsApp button
+          whatsappBtn.classList.add('active');
+          whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Join WhatsApp Group';
+
           successOverlay.classList.add('show');
-          let sec = 2;
+          let sec = 3;
           const timer = setInterval(() => {
             sec--;
             document.getElementById('redirectTimer').textContent = sec;
             if (sec <= 0) {
               clearInterval(timer);
-              successOverlay.classList.remove('show');
-              form.reset();
-              duplicateWarning.classList.remove('show');
-              loadCount();
+              // Redirect to WhatsApp group after speech
+              window.location.href = groupLink;
             }
           }, 1000);
         } else if (data.duplicate) {
