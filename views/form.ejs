@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confronter Tech Wizard Gains</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg: #000000;
+      --card: #0a0a0a;
+      --text: #ffffff;
+      --text-secondary: #888888;
+      --border: #222222;
+      --input-bg: #111111;
+      --accent: #ffffff;
+      --accent-hover: #cccccc;
+      --error: #ff4444;
+      --success: #00ff88;
+      --warning: #ffaa00;
+    }
+
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --card: #f5f5f5;
+      --text: #000000;
+      --text-secondary: #666666;
+      --border: #dddddd;
+      --input-bg: #ffffff;
+      --accent: #000000;
+      --accent-hover: #333333;
+      --error: #cc0000;
+      --success: #00aa44;
+      --warning: #cc8800;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.3s;
+      z-index: 100;
+    }
+
+    .theme-toggle:hover {
+      transform: scale(1.1);
+      border-color: var(--accent);
+    }
+
+    .container {
+      width: 100%;
+      max-width: 440px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 28px;
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .logo-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--text);
+      color: var(--bg);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    .progress-wrap {
+      margin-bottom: 20px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--text);
+      border-radius: 2px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    .count {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+
+    .count span {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .alert {
+      padding: 14px 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert.show { display: flex; }
+    .alert-error { background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.2); color: var(--error); }
+    .alert-warn { background: rgba(255,170,0,0.08); border: 1px solid rgba(255,170,0,0.2); color: var(--warning); }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    input::placeholder { color: var(--text-secondary); opacity: 0.5; }
+
+    input:focus, select:focus {
+      border-color: var(--accent);
+    }
+
+    input.error {
+      border-color: var(--error);
+      animation: shake 0.3s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    .phone-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .phone-row select {
+      width: 100px;
+      flex-shrink: 0;
+      padding: 12px 8px;
+      font-size: 0.85rem;
+    }
+
+    .phone-row input { flex: 1; }
+
+    .error-msg {
+      color: var(--error);
+      font-size: 0.75rem;
+      margin-top: 5px;
+      display: none;
+    }
+
+    .error-msg.show { display: block; }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--text);
+      color: var(--bg);
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 4px;
+    }
+
+    .btn:hover {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: var(--bg);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+
+    [data-theme="light"] .btn .spinner {
+      border-color: rgba(255,255,255,0.3);
+      border-top-color: var(--text);
+    }
+
+    .btn.loading .btn-text { display: none; }
+    .btn.loading .spinner { display: block; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(8px);
+    }
+
+    .overlay.show { display: flex; }
+
+    .overlay-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 44px 36px;
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+      animation: scaleIn 0.3s ease;
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .overlay-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--success);
+      color: #000;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 18px;
+    }
+
+    .overlay-card h2 {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+    }
+
+    .overlay-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+
+    .timer {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin: 14px 0;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .footer a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.75rem;
+      transition: color 0.2s;
+    }
+
+    .footer a:hover { color: var(--text); }
+
+    @media (max-width: 480px) {
+      .card { padding: 24px 20px; }
+      h1 { font-size: 1.15rem; }
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+    <i class="fas fa-sun" id="themeIcon"></i>
+  </button>
+
+  <div class="container">
+    <div class="card">
+      <div class="logo">
+        <div class="logo-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <h1>Confronter Tech Wizard Gains</h1>
+        <p class="subtitle">Join our exclusive group</p>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="count" id="memberCount">Loading...</div>
+      </div>
+
+      <div class="alert alert-warn" id="fullMessage">
+        <i class="fas fa-lock"></i>
+        <span>Group is full. No new registrations accepted.</span>
+      </div>
+
+      <div class="alert alert-error" id="duplicateWarning">
+        <i class="fas fa-circle-exclamation"></i>
+        <span id="duplicateText">Already registered.</span>
+      </div>
+
+      <form id="contactForm" autocomplete="off">
+        <div class="form-group">
+          <label for="fullName">Full Name</label>
+          <input type="text" id="fullName" placeholder="Enter your full name" required>
+          <div class="error-msg" id="nameError">Name required</div>
+        </div>
+
+        <div class="form-group">
+          <label for="phone">Phone Number</label>
+          <div class="phone-row">
+            <select id="countryCode">
+              <option value="+1">🇺🇸 +1</option>
+              <option value="+44">🇬🇧 +44</option>
+              <option value="+234">🇳🇬 +234</option>
+              <option value="+27">🇿🇦 +27</option>
+              <option value="+254">🇰🇪 +254</option>
+              <option value="+233">🇬🇭 +233</option>
+              <option value="+255">🇹🇿 +255</option>
+              <option value="+256">🇺🇬 +256</option>
+              <option value="+91">🇮🇳 +91</option>
+              <option value="+92">🇵🇰 +92</option>
+              <option value="+86">🇨🇳 +86</option>
+              <option value="+81">🇯🇵 +81</option>
+              <option value="+49">🇩🇪 +49</option>
+              <option value="+33">🇫🇷 +33</option>
+              <option value="+39">🇮🇹 +39</option>
+              <option value="+34">🇪🇸 +34</option>
+              <option value="+7">🇷🇺 +7</option>
+              <option value="+55">🇧🇷 +55</option>
+              <option value="+52">🇲🇽 +52</option>
+              <option value="+61">🇦🇺 +61</option>
+              <option value="+64">🇳🇿 +64</option>
+              <option value="+65">🇸🇬 +65</option>
+              <option value="+971">🇦🇪 +971</option>
+              <option value="+966">🇸🇦 +966</option>
+              <option value="+20">🇪🇬 +20</option>
+              <option value="+212">🇲🇦 +212</option>
+              <option value="+251">🇪🇹 +251</option>
+              <option value="+250">🇷🇼 +250</option>
+              <option value="+267">🇧🇼 +267</option>
+              <option value="+263">🇿🇼 +263</option>
+              <option value="+260">🇿🇲 +260</option>
+              <option value="+265">🇲🇼 +265</option>
+              <option value="+268">🇸🇿 +268</option>
+              <option value="+266">🇱🇸 +266</option>
+              <option value="+264">🇳🇦 +264</option>
+              <option value="+243">🇨🇩 +243</option>
+              <option value="+242">🇨🇬 +242</option>
+              <option value="+241">🇬🇦 +241</option>
+              <option value="+240">🇬🇶 +240</option>
+              <option value="+237">🇨🇲 +237</option>
+              <option value="+236">🇨🇫 +236</option>
+              <option value="+235">🇹🇩 +235</option>
+              <option value="+229">🇧🇯 +229</option>
+              <option value="+228">🇹🇬 +228</option>
+              <option value="+227">🇳🇪 +227</option>
+              <option value="+226">🇧🇫 +226</option>
+              <option value="+225">🇨🇮 +225</option>
+              <option value="+224">🇬🇳 +224</option>
+              <option value="+223">🇲🇱 +223</option>
+              <option value="+222">🇲🇷 +222</option>
+              <option value="+221">🇸🇳 +221</option>
+              <option value="+220">🇬🇲 +220</option>
+              <option value="+218">🇱🇾 +218</option>
+              <option value="+216">🇹🇳 +216</option>
+              <option value="+213">🇩🇿 +213</option>
+              <option value="+211">🇸🇸 +211</option>
+              <option value="+249">🇸🇩 +249</option>
+              <option value="+252">🇸🇴 +252</option>
+              <option value="+253">🇩🇯 +253</option>
+              <option value="+257">🇧🇮 +257</option>
+              <option value="+258">🇲🇿 +258</option>
+              <option value="+261">🇲🇬 +261</option>
+              <option value="+262">🇷🇪 +262</option>
+            </select>
+            <input type="tel" id="phone" placeholder="Phone number" required>
+          </div>
+          <div class="error-msg" id="phoneError">Invalid phone number</div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="your@email.com" required>
+          <div class="error-msg" id="emailError">Invalid email</div>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn">
+          <span class="btn-text">Join Group</span>
+          <div class="spinner"></div>
+        </button>
+      </form>
+    </div>
+
+    <div class="footer">
+      <a href="/admin"><i class="fas fa-shield-halved"></i> Admin</a>
+    </div>
+  </div>
+
+  <div class="overlay" id="successOverlay">
+    <div class="overlay-card">
+      <div class="overlay-icon"><i class="fas fa-check"></i></div>
+      <h2>Welcome Aboard!</h2>
+      <p>You joined <strong>Confronter Tech Wizard Gains</strong></p>
+      <div class="timer" id="redirectTimer">2</div>
+      <p style="font-size: 0.8rem; color: var(--text-secondary);">Redirecting...</p>
+    </div>
+  </div>
+
+  <script>
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      themeIcon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    });
+
+    // Form logic
+    const form = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const successOverlay = document.getElementById('successOverlay');
+    const duplicateWarning = document.getElementById('duplicateWarning');
+    const fullMessage = document.getElementById('fullMessage');
+
+    async function loadCount() {
+      try {
+        const res = await fetch('/api/members/count');
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('progressFill').style.width = (data.count / 700 * 100) + '%';
+          document.getElementById('memberCount').innerHTML = `<span>${data.count}</span> / 700 members (${data.remaining} left)`;
+          if (data.count >= 700) {
+            fullMessage.classList.add('show');
+            form.style.display = 'none';
+          }
+        }
+      } catch (e) {
+        document.getElementById('memberCount').textContent = 'Unable to load';
+      }
+    }
+    loadCount();
+
+    // Real-time duplicate check
+    let checkTimeout;
+    const phoneInput = document.getElementById('phone');
+    const emailInput = document.getElementById('email');
+
+    async function checkDup() {
+      const phone = phoneInput.value.trim();
+      const email = emailInput.value.trim();
+      const cc = document.getElementById('countryCode').value;
+      if (!phone && !email) return;
+      try {
+        const params = new URLSearchParams();
+        if (phone) params.append('phone', cc + phone);
+        if (email) params.append('email', email);
+        const res = await fetch('/api/members/check?' + params);
+        const data = await res.json();
+        if (data.exists) {
+          duplicateWarning.classList.add('show');
+          document.getElementById('duplicateText').textContent = `This ${data.field} is already registered.`;
+          submitBtn.disabled = true;
+        } else {
+          duplicateWarning.classList.remove('show');
+          submitBtn.disabled = false;
+        }
+      } catch (e) {}
+    }
+
+    phoneInput.addEventListener('input', () => { clearTimeout(checkTimeout); checkTimeout = setTimeout(checkDup, 500); });
+    emailInput.addEventListener('input', () => { clearTimeout(checkTimeout); checkTimeout = setTimeout(checkDup, 500); });
+
+    // Submit
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.error-msg').forEach(el => el.classList.remove('show'));
+      document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+
+      const fullName = document.getElementById('fullName').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const countryCode = document.getElementById('countryCode').value;
+
+      let err = false;
+      if (fullName.length < 2) { document.getElementById('nameError').classList.add('show'); document.getElementById('fullName').classList.add('error'); err = true; }
+      if (!phone) { document.getElementById('phoneError').classList.add('show'); document.getElementById('phone').classList.add('error'); err = true; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('emailError').classList.add('show'); document.getElementById('email').classList.add('error'); err = true; }
+      if (err) return;
+
+      submitBtn.classList.add('loading');
+      submitBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/members', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fullName, phone, email, countryCode })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Check if admin uploaded VCF is available and visible
+          const vcfRes = await fetch('/api/vcf-status');
+          const vcfData = await vcfRes.json();
+
+          if (vcfData.hasUpload && vcfData.visible) {
+            // Download admin's uploaded VCF
+            window.location.href = '/download/vcf';
+          }
+
+          successOverlay.classList.add('show');
+          let sec = 2;
+          const timer = setInterval(() => {
+            sec--;
+            document.getElementById('redirectTimer').textContent = sec;
+            if (sec <= 0) {
+              clearInterval(timer);
+              successOverlay.classList.remove('show');
+              form.reset();
+              duplicateWarning.classList.remove('show');
+              loadCount();
+            }
+          }, 1000);
+        } else if (data.duplicate) {
+          duplicateWarning.classList.add('show');
+          document.getElementById('duplicateText').textContent = data.message;
+        } else {
+          alert(data.message || 'Error');
+        }
+      } catch (error) {
+        alert('Network error');
+      } finally {
+        submitBtn.classList.remove('loading');
+        submitBtn.disabled = false;
+      }
+    });
+
+    // Auto-detect country
+    const region = (navigator.language || 'en-US').split('-')[1];
+    const map = { US:'+1', GB:'+44', NG:'+234', ZA:'+27', KE:'+254', GH:'+233', TZ:'+255', UG:'+256', IN:'+91', PK:'+92', CN:'+86', JP:'+81', DE:'+49', FR:'+33', IT:'+39', ES:'+34', RU:'+7', BR:'+55', MX:'+52', AU:'+61', NZ:'+64', SG:'+65', AE:'+971', SA:'+966', EG:'+20', MA:'+212', ET:'+251', RW:'+250' };
+    if (map[region]) document.getElementById('countryCode').value = map[region];
+  </script>
+</body>
+</html>
