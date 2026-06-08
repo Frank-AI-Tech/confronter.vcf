@@ -219,6 +219,54 @@
       transition: width 0.5s ease;
     }
 
+    .settings-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .settings-section h3 {
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 16px;
+    }
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .setting-group label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 500;
+    }
+    .setting-group input {
+      padding: 11px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .setting-group input:focus { border-color: var(--accent); }
+    .setting-group .hint {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+    }
+
     .vcf-section {
       background: var(--card);
       border: 1px solid var(--border);
@@ -257,6 +305,8 @@
       background: var(--input-bg);
       border-radius: 10px;
       margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 10px;
     }
     .vcf-status-info {
       display: flex;
@@ -266,6 +316,13 @@
     .vcf-status-info i { font-size: 18px; }
     .vcf-status-info .filename { font-size: 0.85rem; font-weight: 500; }
     .vcf-status-info .meta { font-size: 0.75rem; color: var(--text-secondary); }
+    .vcf-expiry-display {
+      font-size: 0.8rem;
+      color: var(--warning);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
 
     .toggle-switch {
       position: relative;
@@ -397,7 +454,6 @@
     .actions .edit:hover { color: var(--info); background: rgba(59,130,246,0.08); }
     .actions .delete:hover { color: var(--error); background: rgba(255,68,68,0.08); }
 
-    /* Checkbox styles */
     .checkbox-wrap {
       display: flex;
       align-items: center;
@@ -449,7 +505,6 @@
     .empty h3 { font-size: 1rem; margin-bottom: 6px; }
     .empty p { color: var(--text-secondary); font-size: 0.85rem; }
 
-    /* Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -551,6 +606,7 @@
       .sidebar { display: none; }
       .main { margin-left: 0; max-width: 100%; padding: 20px; }
       .stats { grid-template-columns: repeat(3, 1fr); }
+      .settings-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 640px) {
       .stats { grid-template-columns: repeat(2, 1fr); }
@@ -559,6 +615,7 @@
       .filter-bar { flex-direction: column; align-items: stretch; }
       .filter-bar input, .filter-select { width: 100%; }
       .bulk-actions { flex-direction: column; }
+      .vcf-status { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -608,8 +665,8 @@
       <div class="stats">
         <div class="stat">
           <div class="stat-label">Total</div>
-          <div class="stat-value"><%= totalCount %></div>
-          <div class="stat-sub">/ 700 limit</div>
+          <div class="stat-value" id="statTotal"><%= totalCount %></div>
+          <div class="stat-sub" id="statLimit">/ <%= memberLimit %> limit</div>
         </div>
         <div class="stat">
           <div class="stat-label">Verified</div>
@@ -618,30 +675,51 @@
         </div>
         <div class="stat">
           <div class="stat-label">Remaining</div>
-          <div class="stat-value"><%= remaining %></div>
+          <div class="stat-value" id="statRemaining"><%= remaining %></div>
           <div class="stat-sub">spots left</div>
         </div>
         <div class="stat">
           <div class="stat-label">Capacity</div>
-          <div class="stat-value"><%= Math.round((totalCount / 700) * 100) %>%</div>
+          <div class="stat-value" id="statCapacity"><%= Math.round((totalCount / memberLimit) * 100) %>%</div>
           <div class="stat-sub">filled</div>
         </div>
         <div class="stat">
           <div class="stat-label">Status</div>
           <div class="stat-value" style="font-size: 1rem; margin-top: 6px;">
-            <%= totalCount >= 700 ? '<i class="fas fa-lock"></i> Full' : '<i class="fas fa-check"></i> Open' %>
+            <%= totalCount >= memberLimit ? '<i class="fas fa-lock"></i> Full' : '<i class="fas fa-check"></i> Open' %>
           </div>
-          <div class="stat-sub"><%= totalCount >= 700 ? 'Closed' : 'Accepting' %></div>
+          <div class="stat-sub"><%= totalCount >= memberLimit ? 'Closed' : 'Accepting' %></div>
         </div>
       </div>
 
       <div class="progress-section">
         <div class="progress-header">
           <h3>Registration Progress</h3>
-          <span><%= totalCount %> / 700</span>
+          <span id="progressText"><%= totalCount %> / <%= memberLimit %></span>
         </div>
         <div class="progress-track">
-          <div class="progress-fill" style="width: <%= (totalCount / 700) * 100 %>"></div>
+          <div class="progress-fill" id="progressBar" style="width: <%= (totalCount / memberLimit) * 100 %>"></div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3><i class="fas fa-sliders"></i> Settings</h3>
+        <div class="settings-grid">
+          <div class="setting-group">
+            <label for="memberLimitInput">Member Limit</label>
+            <input type="number" id="memberLimitInput" value="<%= memberLimit %>" min="1" max="10000" onchange="updateMemberLimit()">
+            <span class="hint">Max members allowed to register</span>
+          </div>
+          <div class="setting-group">
+            <label for="groupLinkInput">WhatsApp Group Link</label>
+            <input type="url" id="groupLinkInput" value="<%= groupLink %>" placeholder="https://chat.whatsapp.com/...">
+            <span class="hint">Link users get redirected to after verification</span>
+          </div>
+          <div class="setting-group">
+            <label for="vcfExpiryInput">VCF Expiry (days)</label>
+            <input type="number" id="vcfExpiryInput" value="<%= vcfExpiryDays %>" min="1" max="365" onchange="updateVCFExpiry()">
+            <span class="hint">Days before uploaded VCF expires</span>
+          </div>
         </div>
       </div>
 
@@ -652,7 +730,7 @@
         <div class="vcf-upload" id="dropZone">
           <i class="fas fa-cloud-arrow-up"></i>
           <p>Click or drop a .vcf file here to upload</p>
-          <p style="font-size: 0.75rem; margin-top: 6px; color: var(--text-secondary);">This VCF will be available for download in the main registration form</p>
+          <p style="font-size: 0.75rem; margin-top: 6px; color: var(--text-secondary);">Users will see this as a download card on the main form</p>
           <input type="file" id="vcfFile" accept=".vcf,text/vcard" onchange="uploadVCF(this)">
         </div>
         <% } else { %>
@@ -664,12 +742,16 @@
               <div class="meta">Uploaded VCF file &bull; Visible to users on form</div>
             </div>
           </div>
+          <div class="vcf-expiry-display" id="vcfExpiryDisplay">
+            <i class="fas fa-clock"></i>
+            <span id="vcfExpiryText"><%= vcfDaysLeft %> days left</span>
+          </div>
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 0.8rem; color: var(--text-secondary);">Visible to users</span>
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Visible</span>
             <div class="toggle-switch <%= vcfStatus.visible ? 'on' : '' %>" id="vcfToggle" onclick="toggleVCF()"></div>
           </div>
         </div>
-        <div style="display: flex; gap: 10px;">
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
           <button class="btn" onclick="document.getElementById('vcfFile').click()">
             <i class="fas fa-arrows-rotate"></i> Replace
           </button>
@@ -788,7 +870,6 @@
     </div>
   </div>
 
-  <!-- Edit Modal -->
   <div class="modal-overlay" id="editModal">
     <div class="modal">
       <div class="modal-header">
@@ -860,8 +941,8 @@
     let currentPage = 1;
     let totalPages = 1;
     let selectedIds = new Set();
+    let memberLimit = <%= memberLimit %>;
 
-    // Theme
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -875,7 +956,6 @@
       themeIcon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     });
 
-    // Drop zone
     const dropZone = document.getElementById('dropZone');
     if (dropZone) {
       dropZone.addEventListener('click', () => document.getElementById('vcfFile').click());
@@ -896,6 +976,91 @@
       setTimeout(() => t.classList.remove('show'), 3000);
     }
 
+    async function updateMemberLimit() {
+      const limit = parseInt(document.getElementById('memberLimitInput').value);
+      if (!limit || limit < 1) return;
+      try {
+        const res = await fetch('/admin/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, memberLimit: limit })
+        });
+        const data = await res.json();
+        if (data.success) {
+          memberLimit = limit;
+          showToast('Member limit updated to ' + limit);
+          updateStatsDisplay();
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Failed to update limit', true);
+      }
+    }
+
+    async function updateGroupLink() {
+      const link = document.getElementById('groupLinkInput').value.trim();
+      try {
+        const res = await fetch('/admin/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, groupLink: link })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Group link updated');
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Failed to update link', true);
+      }
+    }
+
+    async function updateVCFExpiry() {
+      const days = parseInt(document.getElementById('vcfExpiryInput').value);
+      if (!days || days < 1) return;
+      try {
+        const res = await fetch('/admin/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password, vcfExpiryDays: days })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('VCF expiry set to ' + days + ' days');
+          updateVCFExpiryDisplay();
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Failed to update expiry', true);
+      }
+    }
+
+    function updateStatsDisplay() {
+      const total = <%= totalCount %>;
+      document.getElementById('statLimit').textContent = '/ ' + memberLimit + ' limit';
+      document.getElementById('statRemaining').textContent = Math.max(0, memberLimit - total);
+      document.getElementById('statCapacity').textContent = Math.round((total / memberLimit) * 100) + '%';
+      document.getElementById('progressText').textContent = total + ' / ' + memberLimit;
+      document.getElementById('progressBar').style.width = (total / memberLimit) * 100 + '%';
+    }
+
+    function updateVCFExpiryDisplay() {
+      const expiryText = document.getElementById('vcfExpiryText');
+      if (expiryText) {
+        const days = parseInt(document.getElementById('vcfExpiryInput').value);
+        expiryText.textContent = days + ' days left';
+      }
+    }
+
+    let linkTimeout;
+    document.getElementById('groupLinkInput').addEventListener('input', () => {
+      clearTimeout(linkTimeout);
+      linkTimeout = setTimeout(updateGroupLink, 800);
+    });
+
     async function uploadVCF(input) {
       const file = input.files ? input.files[0] : input.files[0];
       if (!file) return;
@@ -910,7 +1075,7 @@
         const res = await fetch('/admin/upload-vcf', { method: 'POST', body: formData });
         const data = await res.json();
         if (data.success) {
-          showToast('VCF uploaded successfully — now visible on main form');
+          showToast('VCF uploaded — visible on main form');
           setTimeout(() => location.reload(), 1000);
         } else {
           showToast(data.message, true);
@@ -930,7 +1095,7 @@
         const data = await res.json();
         if (data.success) {
           document.getElementById('vcfToggle').classList.toggle('on', data.visible);
-          showToast(data.visible ? 'VCF visible to users on form' : 'VCF hidden from users');
+          showToast(data.visible ? 'VCF visible on form' : 'VCF hidden from form');
         }
       } catch (e) {
         showToast('Toggle failed', true);
@@ -957,13 +1122,12 @@
       }
     }
 
-    // ===== BULK SELECTION =====
     function toggleSelectAll() {
       const checkboxes = document.querySelectorAll('.member-checkbox');
       const selectAll = document.getElementById('selectAll').checked;
       const selectAllHeader = document.getElementById('selectAllHeader');
       selectAllHeader.checked = selectAll;
-
+      
       checkboxes.forEach(cb => {
         cb.checked = selectAll;
         if (selectAll) selectedIds.add(cb.value);
@@ -1058,13 +1222,10 @@
       }
     }
 
-    // Mark ALL Verified
     async function markAllVerify() {
       if (!confirm('Mark ALL members as verified?')) return;
       try {
-        const res = await fetch('/admin/api/members/mark-all-verify?password=' + encodeURIComponent(password), {
-          method: 'POST'
-        });
+        const res = await fetch('/admin/api/members/mark-all-verify?password=' + encodeURIComponent(password), { method: 'POST' });
         const data = await res.json();
         if (data.success) {
           showToast(data.message);
@@ -1078,13 +1239,10 @@
       }
     }
 
-    // Mark ALL Unverified
     async function markAllUnverify() {
       if (!confirm('Mark ALL members as unverified?')) return;
       try {
-        const res = await fetch('/admin/api/members/mark-all-unverify?password=' + encodeURIComponent(password), {
-          method: 'POST'
-        });
+        const res = await fetch('/admin/api/members/mark-all-unverify?password=' + encodeURIComponent(password), { method: 'POST' });
         const data = await res.json();
         if (data.success) {
           showToast(data.message);
