@@ -291,6 +291,13 @@
     }
     .toggle-switch.on::after { left: 25px; }
 
+    .bulk-actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
     .filter-bar {
       display: flex;
       gap: 10px;
@@ -527,6 +534,7 @@
       .header-actions { width: 100%; }
       .filter-bar { flex-direction: column; align-items: stretch; }
       .filter-bar input, .filter-select { width: 100%; }
+      .bulk-actions { flex-direction: column; }
     }
   </style>
 </head>
@@ -648,8 +656,17 @@
         <% } %>
       </div>
 
+      <div class="bulk-actions">
+        <button class="btn btn-success" onclick="markAllVerify()">
+          <i class="fas fa-check-double"></i> Mark All Verified
+        </button>
+        <button class="btn btn-danger" onclick="markAllUnverify()">
+          <i class="fas fa-times-circle"></i> Mark All Unverified
+        </button>
+      </div>
+
       <div class="filter-bar">
-        <input type="text" id="searchInput" placeholder="Search by name, email, phone...">
+        <input type="text" id="searchInput" placeholder="Search members...">
         <select class="filter-select" id="filterSelect" onchange="loadMembers(1)">
           <option value="all">All Members</option>
           <option value="verified">Verified Only</option>
@@ -672,7 +689,7 @@
               <th>Phone</th>
               <th>Status</th>
               <th>Joined</th>
-              <th>Actions</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="membersTable">
@@ -686,7 +703,7 @@
                     <div class="member-name"><%= m.fullName %></div>
                     <div class="member-email"><%= m.email %></div>
                     <% if (m.notes) { %>
-                      <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px; font-style: italic;"><i class="fas fa-note-sticky"></i> <%= m.notes %></div>
+                      <div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;font-style:italic;"><i class="fas fa-note-sticky"></i> <%= m.notes %></div>
                     <% } %>
                   </td>
                   <td class="member-phone"><%= m.formattedPhone %></td>
@@ -704,13 +721,13 @@
                   </td>
                   <td>
                     <div class="actions">
-                      <button class="verify" onclick="toggleVerify('<%= m._id %>', this)" title="<%= m.verified ? 'Unverify' : 'Verify' %>">
+                      <button class="verify" onclick="toggleVerify('<%= m._id %>',this)" title="<%= m.verified ? 'Unverify' : 'Verify' %>">
                         <i class="fas <%= m.verified ? 'fa-times-circle' : 'fa-check-circle' %>"></i>
                       </button>
                       <button class="edit" onclick="openEdit('<%= m._id %>')" title="Edit">
                         <i class="fas fa-pen"></i>
                       </button>
-                      <button class="delete" onclick="deleteMember('<%= m._id %>', this)" title="Delete">
+                      <button class="delete" onclick="deleteMember('<%= m._id %>',this)" title="Delete">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -883,11 +900,51 @@
       showToast('Use Replace to change the file', true);
     }
 
+    // Mark All Verified
+    async function markAllVerify() {
+      if (!confirm('Mark ALL members as verified?')) return;
+      try {
+        const res = await fetch('/admin/api/members/mark-all-verify?password=' + encodeURIComponent(password), {
+          method: 'POST'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          loadMembers(currentPage);
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Failed to mark all verified', true);
+      }
+    }
+
+    // Mark All Unverified
+    async function markAllUnverify() {
+      if (!confirm('Mark ALL members as unverified?')) return;
+      try {
+        const res = await fetch('/admin/api/members/mark-all-unverify?password=' + encodeURIComponent(password), {
+          method: 'POST'
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          loadMembers(currentPage);
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Failed to mark all unverified', true);
+      }
+    }
+
     async function loadMembers(page = 1) {
       try {
         const search = document.getElementById('searchInput').value;
         const filter = document.getElementById('filterSelect').value;
-        const res = await fetch(`/admin/api/members?page=${page}&limit=50&search=${encodeURIComponent(search)}&filter=${filter}&password=${encodeURIComponent(password)}`);
+        const res = await fetch('/admin/api/members?page=' + page + '&limit=50&search=' + encodeURIComponent(search) + '&filter=' + filter + '&password=' + encodeURIComponent(password));
         const data = await res.json();
         if (data.success) {
           renderMembers(data.members);
@@ -911,19 +968,19 @@
       }
       tbody.innerHTML = members.map((m, i) => {
         const d = new Date(m.createdAt);
-        const notesHtml = m.notes ? `<div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;font-style:italic;"><i class="fas fa-note-sticky"></i> ${m.notes}</div>` : '';
-        return `<tr data-id="${m._id}">
-          <td>${(currentPage-1)*50 + i + 1}</td>
-          <td><div class="member-name">${m.fullName}</div><div class="member-email">${m.email}</div>${notesHtml}</td>
-          <td class="member-phone">${m.formattedPhone}</td>
-          <td><span class="badge ${m.verified ? 'badge-verified' : 'badge-unverified'}"><i class="fas ${m.verified ? 'fa-check-circle' : 'fa-circle'}"></i> ${m.verified ? 'Verified' : 'Pending'}</span></td>
-          <td>${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}<br><span style="color:var(--text-secondary);font-size:0.7rem;">${d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span></td>
-          <td><div class="actions">
-            <button class="verify" onclick="toggleVerify('${m._id}',this)" title="${m.verified ? 'Unverify' : 'Verify'}"><i class="fas ${m.verified ? 'fa-times-circle' : 'fa-check-circle'}"></i></button>
-            <button class="edit" onclick="openEdit('${m._id}')" title="Edit"><i class="fas fa-pen"></i></button>
-            <button class="delete" onclick="deleteMember('${m._id}',this)" title="Delete"><i class="fas fa-trash"></i></button>
-          </div></td>
-        </tr>`;
+        const notesHtml = m.notes ? '<div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;font-style:italic;"><i class="fas fa-note-sticky"></i> ' + m.notes + '</div>' : '';
+        return '<tr data-id="' + m._id + '">' +
+          '<td>' + ((currentPage-1)*50 + i + 1) + '</td>' +
+          '<td><div class="member-name">' + m.fullName + '</div><div class="member-email">' + m.email + '</div>' + notesHtml + '</td>' +
+          '<td class="member-phone">' + m.formattedPhone + '</td>' +
+          '<td><span class="badge ' + (m.verified ? 'badge-verified' : 'badge-unverified') + '"><i class="fas ' + (m.verified ? 'fa-check-circle' : 'fa-circle') + '"></i> ' + (m.verified ? 'Verified' : 'Pending') + '</span></td>' +
+          '<td>' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '<br><span style="color:var(--text-secondary);font-size:0.7rem;">' + d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + '</span></td>' +
+          '<td><div class="actions">' +
+            '<button class="verify" onclick="toggleVerify('' + m._id + '',this)" title="' + (m.verified ? 'Unverify' : 'Verify') + '"><i class="fas ' + (m.verified ? 'fa-times-circle' : 'fa-check-circle') + '"></i></button>' +
+            '<button class="edit" onclick="openEdit('' + m._id + '')" title="Edit"><i class="fas fa-pen"></i></button>' +
+            '<button class="delete" onclick="deleteMember('' + m._id + '',this)" title="Delete"><i class="fas fa-trash"></i></button>' +
+          '</div></td>' +
+        '</tr>';
       }).join('');
     }
 
@@ -936,7 +993,7 @@
 
     async function toggleVerify(id, btn) {
       try {
-        const res = await fetch(`/admin/api/members/${id}/verify?password=${encodeURIComponent(password)}`, { method: 'PATCH' });
+        const res = await fetch('/admin/api/members/' + id + '/verify?password=' + encodeURIComponent(password), { method: 'PATCH' });
         const data = await res.json();
         if (data.success) {
           showToast(data.message);
@@ -951,7 +1008,7 @@
 
     async function openEdit(id) {
       try {
-        const res = await fetch(`/admin/api/members/${id}?password=${encodeURIComponent(password)}`);
+        const res = await fetch('/admin/api/members/' + id + '?password=' + encodeURIComponent(password));
         const data = await res.json();
         if (data.success) {
           const m = data.member;
@@ -982,7 +1039,7 @@
         notes: document.getElementById('editNotes').value
       };
       try {
-        const res = await fetch(`/admin/api/members/${id}?password=${encodeURIComponent(password)}`, {
+        const res = await fetch('/admin/api/members/' + id + '?password=' + encodeURIComponent(password), {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
@@ -1003,7 +1060,7 @@
     async function deleteMember(id, btn) {
       if (!confirm('Delete this member permanently?')) return;
       try {
-        const res = await fetch(`/admin/api/members/${id}?password=${encodeURIComponent(password)}`, { method: 'DELETE' });
+        const res = await fetch('/admin/api/members/' + id + '?password=' + encodeURIComponent(password), { method: 'DELETE' });
         const data = await res.json();
         if (data.success) {
           btn.closest('tr').remove();
@@ -1017,7 +1074,6 @@
       }
     }
 
-    // Close modal on overlay click
     document.getElementById('editModal').addEventListener('click', (e) => {
       if (e.target === document.getElementById('editModal')) closeEdit();
     });
