@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Confronter Tech Wizard Gains</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    :root {
+      --bg: #000000;
+      --sidebar: #0a0a0a;
+      --card: #0a0a0a;
+      --text: #ffffff;
+      --text-secondary: #888888;
+      --border: #222222;
+      --input-bg: #111111;
+      --accent: #ffffff;
+      --success: #00ff88;
+      --error: #ff4444;
+      --warning: #ffaa00;
+      --info: #3b82f6;
+    }
+    [data-theme="light"] {
+      --bg: #ffffff;
+      --sidebar: #f5f5f5;
+      --card: #f5f5f5;
+      --text: #000000;
+      --text-secondary: #666666;
+      --border: #dddddd;
+      --input-bg: #ffffff;
+      --accent: #000000;
+      --success: #00aa44;
+      --error: #cc0000;
+      --warning: #cc8800;
+      --info: #2563eb;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+    .theme-toggle:hover { transform: scale(1.1); border-color: var(--accent); }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 260px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      padding: 28px 20px;
+      position: fixed;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .brand-icon {
+      width: 40px; height: 40px;
+      background: var(--text);
+      color: var(--bg);
+      border-radius: 10px;
+      display: flex;
+      align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .brand h2 { font-size: 0.95rem; font-weight: 700; }
+    .brand p { font-size: 0.7rem; color: var(--text-secondary); }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 11px 14px; border-radius: 8px;
+      color: var(--text-secondary); text-decoration: none;
+      font-size: 0.85rem; font-weight: 500;
+      transition: all 0.2s; margin-bottom: 3px;
+    }
+    .nav-item:hover, .nav-item.active {
+      background: rgba(128,128,128,0.08);
+      color: var(--text);
+    }
+    .nav-item i { width: 18px; text-align: center; }
+
+    .main {
+      margin-left: 260px;
+      flex: 1;
+      padding: 28px 36px;
+      max-width: calc(100% - 260px);
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h1 { font-size: 1.4rem; font-weight: 700; }
+    .header-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn:hover { border-color: var(--accent); }
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+      border-color: var(--text);
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-success {
+      background: rgba(0,255,136,0.1);
+      border-color: rgba(0,255,136,0.3);
+      color: var(--success);
+    }
+    .btn-success:hover { background: rgba(0,255,136,0.2); }
+    .btn-danger {
+      background: rgba(255,68,68,0.08);
+      border-color: rgba(255,68,68,0.3);
+      color: var(--error);
+    }
+    .btn-danger:hover { background: rgba(255,68,68,0.15); }
+    .btn-sm {
+      padding: 6px 10px;
+      font-size: 0.75rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+    }
+    .stat-sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .progress-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .progress-header h3 { font-size: 0.9rem; }
+    .progress-header span { color: var(--text-secondary); font-size: 0.85rem; }
+    .progress-track {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--text);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .vcf-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .vcf-section h3 {
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .vcf-upload {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 32px;
+      text-align: center;
+      margin-bottom: 16px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .vcf-upload:hover {
+      border-color: var(--accent);
+    }
+    .vcf-upload i { font-size: 32px; color: var(--text-secondary); margin-bottom: 10px; }
+    .vcf-upload p { color: var(--text-secondary); font-size: 0.85rem; }
+    .vcf-upload input { display: none; }
+
+    .vcf-status {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--input-bg);
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+    .vcf-status-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .vcf-status-info i { font-size: 18px; }
+    .vcf-status-info .filename { font-size: 0.85rem; font-weight: 500; }
+    .vcf-status-info .meta { font-size: 0.75rem; color: var(--text-secondary); }
+
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      background: var(--border);
+      border-radius: 13px;
+      cursor: pointer;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+    .toggle-switch.on { background: var(--success); }
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: var(--text);
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: all 0.3s;
+    }
+    .toggle-switch.on::after { left: 25px; }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-bar input {
+      flex: 1;
+      min-width: 200px;
+      padding: 11px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .filter-bar input:focus { border-color: var(--accent); }
+    .filter-bar input::placeholder { color: var(--text-secondary); opacity: 0.5; }
+    .filter-select {
+      padding: 11px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .table-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      overflow-x: auto;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    th {
+      text-align: left;
+      padding: 14px 16px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    tr:hover td { background: rgba(128,128,128,0.03); }
+    .member-name { font-weight: 600; color: var(--text); }
+    .member-email { font-size: 0.75rem; margin-top: 2px; }
+    .member-phone { font-family: monospace; font-size: 0.8rem; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+    .badge-verified {
+      background: rgba(0,255,136,0.1);
+      color: var(--success);
+      border: 1px solid rgba(0,255,136,0.2);
+    }
+    .badge-unverified {
+      background: rgba(255,170,0,0.1);
+      color: var(--warning);
+      border: 1px solid rgba(255,170,0,0.2);
+    }
+    .actions { display: flex; gap: 4px; }
+    .actions button {
+      background: none; border: none;
+      color: var(--text-secondary);
+      cursor: pointer; padding: 6px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      font-size: 0.85rem;
+    }
+    .actions button:hover { color: var(--text); background: rgba(128,128,128,0.08); }
+    .actions .verify:hover { color: var(--success); background: rgba(0,255,136,0.08); }
+    .actions .edit:hover { color: var(--info); background: rgba(59,130,246,0.08); }
+    .actions .delete:hover { color: var(--error); background: rgba(255,68,68,0.08); }
+
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      padding: 16px;
+    }
+    .pagination button {
+      padding: 7px 12px;
+      border-radius: 6px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .pagination button:hover:not(:disabled) { border-color: var(--accent); }
+    .pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
+    .pagination span { color: var(--text-secondary); font-size: 0.8rem; }
+
+    .empty {
+      text-align: center;
+      padding: 48px 20px;
+    }
+    .empty i { font-size: 40px; color: var(--border); margin-bottom: 12px; }
+    .empty h3 { font-size: 1rem; margin-bottom: 6px; }
+    .empty p { color: var(--text-secondary); font-size: 0.85rem; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      backdrop-filter: blur(8px);
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      max-width: 480px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .modal-header h2 { font-size: 1.1rem; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 4px;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-group {
+      margin-bottom: 16px;
+    }
+    .modal-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .modal-group input, .modal-group textarea, .modal-group select {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .modal-group input:focus, .modal-group textarea:focus, .modal-group select:focus {
+      border-color: var(--accent);
+    }
+    .modal-group textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 14px 22px;
+      border-radius: 10px;
+      background: var(--text);
+      color: var(--bg);
+      font-weight: 500;
+      font-size: 0.85rem;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 3000;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { background: var(--error); color: #fff; }
+
+    @media (max-width: 1024px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; max-width: 100%; padding: 20px; }
+      .stats { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .header { flex-direction: column; gap: 14px; align-items: flex-start; }
+      .header-actions { width: 100%; }
+      .filter-bar { flex-direction: column; align-items: stretch; }
+      .filter-bar input, .filter-select { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+    <i class="fas fa-sun" id="themeIcon"></i>
+  </button>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="brand">
+        <div class="brand-icon"><i class="fas fa-wand-magic-sparkles"></i></div>
+        <div>
+          <h2>Confronter</h2>
+          <p>Tech Wizard Gains</p>
+        </div>
+      </div>
+      <nav>
+        <a href="#" class="nav-item active">
+          <i class="fas fa-users"></i> Members
+        </a>
+        <a href="/form" class="nav-item" target="_blank">
+          <i class="fas fa-external-link-alt"></i> View Form
+        </a>
+      </nav>
+    </div>
+
+    <div class="main">
+      <div class="header">
+        <h1>Member Management</h1>
+        <div class="header-actions">
+          <a href="/admin/export?password=<%= password %>" class="btn btn-sm">
+            <i class="fas fa-file-code"></i> JSON
+          </a>
+          <a href="/admin/export-csv?password=<%= password %>" class="btn btn-sm">
+            <i class="fas fa-file-csv"></i> CSV
+          </a>
+          <a href="/admin/export-vcf?password=<%= password %>" class="btn btn-sm">
+            <i class="fas fa-address-card"></i> VCF
+          </a>
+          <a href="/form" target="_blank" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Add
+          </a>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-label">Total</div>
+          <div class="stat-value"><%= totalCount %></div>
+          <div class="stat-sub">/ 700 limit</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Verified</div>
+          <div class="stat-value" style="color: var(--success);"><%= verifiedCount %></div>
+          <div class="stat-sub">members</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Remaining</div>
+          <div class="stat-value"><%= remaining %></div>
+          <div class="stat-sub">spots left</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Capacity</div>
+          <div class="stat-value"><%= Math.round((totalCount / 700) * 100) %>%</div>
+          <div class="stat-sub">filled</div>
+        </div>
+        <div class="stat">
+          <div class="stat-label">Status</div>
+          <div class="stat-value" style="font-size: 1rem; margin-top: 6px;">
+            <%= totalCount >= 700 ? '<i class="fas fa-lock"></i> Full' : '<i class="fas fa-check"></i> Open' %>
+          </div>
+          <div class="stat-sub"><%= totalCount >= 700 ? 'Closed' : 'Accepting' %></div>
+        </div>
+      </div>
+
+      <div class="progress-section">
+        <div class="progress-header">
+          <h3>Registration Progress</h3>
+          <span><%= totalCount %> / 700</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width: <%= (totalCount / 700) * 100 %>%"></div>
+        </div>
+      </div>
+
+      <div class="vcf-section">
+        <h3><i class="fas fa-address-card"></i> VCF File Control</h3>
+
+        <% if (!vcfStatus.hasUpload) { %>
+        <div class="vcf-upload" id="dropZone">
+          <i class="fas fa-cloud-arrow-up"></i>
+          <p>Click or drop a .vcf file here to upload</p>
+          <input type="file" id="vcfFile" accept=".vcf,text/vcard" onchange="uploadVCF(this)">
+        </div>
+        <% } else { %>
+        <div class="vcf-status">
+          <div class="vcf-status-info">
+            <i class="fas fa-file-lines" style="color: var(--success);"></i>
+            <div>
+              <div class="filename"><%= vcfStatus.filename %></div>
+              <div class="meta">Uploaded VCF file</div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 0.8rem; color: var(--text-secondary);">Visible to users</span>
+            <div class="toggle-switch <%= vcfStatus.visible ? 'on' : '' %>" id="vcfToggle" onclick="toggleVCF()"></div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn" onclick="document.getElementById('vcfFile').click()">
+            <i class="fas fa-arrows-rotate"></i> Replace
+          </button>
+          <button class="btn btn-danger" onclick="deleteVCF()">
+            <i class="fas fa-trash"></i> Remove
+          </button>
+          <input type="file" id="vcfFile" accept=".vcf,text/vcard" style="display: none;" onchange="uploadVCF(this)">
+        </div>
+        <% } %>
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" id="searchInput" placeholder="Search by name, email, phone...">
+        <select class="filter-select" id="filterSelect" onchange="loadMembers(1)">
+          <option value="all">All Members</option>
+          <option value="verified">Verified Only</option>
+          <option value="unverified">Unverified Only</option>
+        </select>
+        <button class="btn" onclick="searchMembers()">
+          <i class="fas fa-search"></i>
+        </button>
+        <button class="btn" onclick="loadMembers()">
+          <i class="fas fa-rotate-right"></i>
+        </button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Member</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="membersTable">
+            <% if (members.length === 0) { %>
+              <tr><td colspan="6"><div class="empty"><i class="fas fa-users"></i><h3>No members</h3><p>Members appear here once registered.</p></div></td></tr>
+            <% } else { %>
+              <% members.forEach((m, i) => { %>
+                <tr data-id="<%= m._id %>">
+                  <td><%= i + 1 %></td>
+                  <td>
+                    <div class="member-name"><%= m.fullName %></div>
+                    <div class="member-email"><%= m.email %></div>
+                    <% if (m.notes) { %>
+                      <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px; font-style: italic;"><i class="fas fa-note-sticky"></i> <%= m.notes %></div>
+                    <% } %>
+                  </td>
+                  <td class="member-phone"><%= m.formattedPhone %></td>
+                  <td>
+                    <span class="badge <%= m.verified ? 'badge-verified' : 'badge-unverified' %>">
+                      <i class="fas <%= m.verified ? 'fa-check-circle' : 'fa-circle' %>"></i>
+                      <%= m.verified ? 'Verified' : 'Pending' %>
+                    </span>
+                  </td>
+                  <td>
+                    <%= new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) %>
+                    <br><span style="color: var(--text-secondary); font-size: 0.7rem;">
+                      <%= new Date(m.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) %>
+                    </span>
+                  </td>
+                  <td>
+                    <div class="actions">
+                      <button class="verify" onclick="toggleVerify('<%= m._id %>', this)" title="<%= m.verified ? 'Unverify' : 'Verify' %>">
+                        <i class="fas <%= m.verified ? 'fa-times-circle' : 'fa-check-circle' %>"></i>
+                      </button>
+                      <button class="edit" onclick="openEdit('<%= m._id %>')" title="Edit">
+                        <i class="fas fa-pen"></i>
+                      </button>
+                      <button class="delete" onclick="deleteMember('<%= m._id %>', this)" title="Delete">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination" id="pagination">
+        <button onclick="changePage(-1)" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+        <span>Page <span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+        <button onclick="changePage(1)" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2><i class="fas fa-pen"></i> Edit Member</h2>
+        <button class="modal-close" onclick="closeEdit()"><i class="fas fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+        <div class="modal-group">
+          <label>Full Name</label>
+          <input type="text" id="editName" placeholder="Full name">
+        </div>
+        <div class="modal-group">
+          <label>Phone Number</label>
+          <div style="display: flex; gap: 8px;">
+            <select id="editCountryCode" style="width: 100px; flex-shrink: 0;">
+              <option value="+1">+1</option>
+              <option value="+44">+44</option>
+              <option value="+234">+234</option>
+              <option value="+27">+27</option>
+              <option value="+254">+254</option>
+              <option value="+233">+233</option>
+              <option value="+255">+255</option>
+              <option value="+256">+256</option>
+              <option value="+91">+91</option>
+              <option value="+92">+92</option>
+              <option value="+86">+86</option>
+              <option value="+81">+81</option>
+              <option value="+49">+49</option>
+              <option value="+33">+33</option>
+              <option value="+39">+39</option>
+              <option value="+34">+34</option>
+              <option value="+7">+7</option>
+              <option value="+55">+55</option>
+              <option value="+52">+52</option>
+              <option value="+61">+61</option>
+              <option value="+64">+64</option>
+              <option value="+65">+65</option>
+              <option value="+971">+971</option>
+              <option value="+966">+966</option>
+              <option value="+20">+20</option>
+              <option value="+212">+212</option>
+              <option value="+251">+251</option>
+              <option value="+250">+250</option>
+            </select>
+            <input type="tel" id="editPhone" placeholder="Phone number" style="flex: 1;">
+          </div>
+        </div>
+        <div class="modal-group">
+          <label>Email</label>
+          <input type="email" id="editEmail" placeholder="Email">
+        </div>
+        <div class="modal-group">
+          <label>Notes</label>
+          <textarea id="editNotes" placeholder="Add notes about this member..."></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeEdit()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const password = '<%= password %>';
+    let currentPage = 1;
+    let totalPages = 1;
+
+    // Theme
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    themeIcon.className = savedTheme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    themeToggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      themeIcon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+    });
+
+    // Drop zone
+    const dropZone = document.getElementById('dropZone');
+    if (dropZone) {
+      dropZone.addEventListener('click', () => document.getElementById('vcfFile').click());
+      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent)'; });
+      dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'var(--border)'; });
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.style.borderColor = 'var(--border)';
+        const files = e.dataTransfer.files;
+        if (files.length) uploadVCF({ files: [files[0]] });
+      });
+    }
+
+    function showToast(msg, isError) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast' + (isError ? ' error' : '') + ' show';
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    async function uploadVCF(input) {
+      const file = input.files ? input.files[0] : input.files[0];
+      if (!file) return;
+      if (!file.name.endsWith('.vcf')) {
+        showToast('Only .vcf files allowed', true);
+        return;
+      }
+      const formData = new FormData();
+      formData.append('vcfFile', file);
+      formData.append('password', password);
+      try {
+        const res = await fetch('/admin/upload-vcf', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+          showToast('VCF uploaded successfully');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Upload failed', true);
+      }
+    }
+
+    async function toggleVCF() {
+      try {
+        const res = await fetch('/admin/toggle-vcf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('vcfToggle').classList.toggle('on', data.visible);
+          showToast(data.visible ? 'VCF visible to users' : 'VCF hidden from users');
+        }
+      } catch (e) {
+        showToast('Toggle failed', true);
+      }
+    }
+
+    async function deleteVCF() {
+      if (!confirm('Remove uploaded VCF?')) return;
+      showToast('Use Replace to change the file', true);
+    }
+
+    async function loadMembers(page = 1) {
+      try {
+        const search = document.getElementById('searchInput').value;
+        const filter = document.getElementById('filterSelect').value;
+        const res = await fetch(`/admin/api/members?page=${page}&limit=50&search=${encodeURIComponent(search)}&filter=${filter}&password=${encodeURIComponent(password)}`);
+        const data = await res.json();
+        if (data.success) {
+          renderMembers(data.members);
+          currentPage = data.pagination.page;
+          totalPages = data.pagination.pages;
+          document.getElementById('currentPage').textContent = currentPage;
+          document.getElementById('totalPages').textContent = totalPages || 1;
+          document.getElementById('prevBtn').disabled = currentPage <= 1;
+          document.getElementById('nextBtn').disabled = currentPage >= totalPages || totalPages === 0;
+        }
+      } catch (e) {
+        showToast('Failed to load', true);
+      }
+    }
+
+    function renderMembers(members) {
+      const tbody = document.getElementById('membersTable');
+      if (members.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><i class="fas fa-users"></i><h3>No members found</h3><p>Try adjusting filters.</p></div></td></tr>';
+        return;
+      }
+      tbody.innerHTML = members.map((m, i) => {
+        const d = new Date(m.createdAt);
+        const notesHtml = m.notes ? `<div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;font-style:italic;"><i class="fas fa-note-sticky"></i> ${m.notes}</div>` : '';
+        return `<tr data-id="${m._id}">
+          <td>${(currentPage-1)*50 + i + 1}</td>
+          <td><div class="member-name">${m.fullName}</div><div class="member-email">${m.email}</div>${notesHtml}</td>
+          <td class="member-phone">${m.formattedPhone}</td>
+          <td><span class="badge ${m.verified ? 'badge-verified' : 'badge-unverified'}"><i class="fas ${m.verified ? 'fa-check-circle' : 'fa-circle'}"></i> ${m.verified ? 'Verified' : 'Pending'}</span></td>
+          <td>${d.toLocaleDateString('en-US',{month:'short',day:'numeric'})}<br><span style="color:var(--text-secondary);font-size:0.7rem;">${d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span></td>
+          <td><div class="actions">
+            <button class="verify" onclick="toggleVerify('${m._id}',this)" title="${m.verified ? 'Unverify' : 'Verify'}"><i class="fas ${m.verified ? 'fa-times-circle' : 'fa-check-circle'}"></i></button>
+            <button class="edit" onclick="openEdit('${m._id}')" title="Edit"><i class="fas fa-pen"></i></button>
+            <button class="delete" onclick="deleteMember('${m._id}',this)" title="Delete"><i class="fas fa-trash"></i></button>
+          </div></td>
+        </tr>`;
+      }).join('');
+    }
+
+    function changePage(dir) {
+      const np = currentPage + dir;
+      if (np >= 1 && np <= totalPages) loadMembers(np);
+    }
+    function searchMembers() { loadMembers(1); }
+    document.getElementById('searchInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') searchMembers(); });
+
+    async function toggleVerify(id, btn) {
+      try {
+        const res = await fetch(`/admin/api/members/${id}/verify?password=${encodeURIComponent(password)}`, { method: 'PATCH' });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          loadMembers(currentPage);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Failed', true);
+      }
+    }
+
+    async function openEdit(id) {
+      try {
+        const res = await fetch(`/admin/api/members/${id}?password=${encodeURIComponent(password)}`);
+        const data = await res.json();
+        if (data.success) {
+          const m = data.member;
+          document.getElementById('editId').value = m._id;
+          document.getElementById('editName').value = m.fullName;
+          document.getElementById('editEmail').value = m.email;
+          document.getElementById('editPhone').value = m.phone.replace(m.countryCode, '');
+          document.getElementById('editCountryCode').value = m.countryCode;
+          document.getElementById('editNotes').value = m.notes || '';
+          document.getElementById('editModal').classList.add('show');
+        }
+      } catch (e) {
+        showToast('Failed to load member', true);
+      }
+    }
+
+    function closeEdit() {
+      document.getElementById('editModal').classList.remove('show');
+    }
+
+    async function saveEdit() {
+      const id = document.getElementById('editId').value;
+      const body = {
+        fullName: document.getElementById('editName').value,
+        email: document.getElementById('editEmail').value,
+        phone: document.getElementById('editPhone').value,
+        countryCode: document.getElementById('editCountryCode').value,
+        notes: document.getElementById('editNotes').value
+      };
+      try {
+        const res = await fetch(`/admin/api/members/${id}?password=${encodeURIComponent(password)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('Member updated');
+          closeEdit();
+          loadMembers(currentPage);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Update failed', true);
+      }
+    }
+
+    async function deleteMember(id, btn) {
+      if (!confirm('Delete this member permanently?')) return;
+      try {
+        const res = await fetch(`/admin/api/members/${id}?password=${encodeURIComponent(password)}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          btn.closest('tr').remove();
+          showToast('Deleted');
+          setTimeout(() => location.reload(), 800);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Delete failed', true);
+      }
+    }
+
+    // Close modal on overlay click
+    document.getElementById('editModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('editModal')) closeEdit();
+    });
+
+    setInterval(() => loadMembers(currentPage), 30000);
+  </script>
+</body>
+</html>
