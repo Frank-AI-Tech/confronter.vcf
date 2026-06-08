@@ -666,7 +666,10 @@
         <div class="stat">
           <div class="stat-label">Total</div>
           <div class="stat-value" id="statTotal"><%= totalCount %></div>
-          <div class="stat-sub" id="statLimit">/ <%= memberLimit %> limit</div>
+          <div class="stat-sub" id="statLimit">
+    / <%= typeof memberLimit !== 'undefined' ? memberLimit : '∞' %> limit
+</div>
+
         </div>
         <div class="stat">
           <div class="stat-label">Verified</div>
