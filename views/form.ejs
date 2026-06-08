@@ -160,7 +160,6 @@
       font-size: 0.85rem;
     }
 
-    /* WhatsApp button — DIM before form fill, ACTIVE after verification */
     .whatsapp-link {
       display: inline-flex;
       align-items: center;
@@ -363,7 +362,6 @@
 
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* VCF Download Card */
     .vcf-download-card {
       background: linear-gradient(135deg, rgba(0,255,136,0.05), rgba(0,255,136,0.02));
       border: 1px solid rgba(0,255,136,0.2);
@@ -488,7 +486,6 @@
       margin: 14px 0;
     }
 
-    /* NEW: Go back button in overlay */
     .overlay-actions {
       display: flex;
       flex-direction: column;
@@ -579,7 +576,6 @@
         <div class="count" id="memberCount">Loading...</div>
       </div>
 
-      <!-- VCF Download Card — visible when admin uploads VCF -->
       <div class="vcf-download-card" id="vcfCard">
         <div class="vcf-icon"><i class="fas fa-address-card"></i></div>
         <div class="vcf-info">
@@ -641,41 +637,6 @@
               <option value="+212">🇲🇦 +212</option>
               <option value="+251">🇪🇹 +251</option>
               <option value="+250">🇷🇼 +250</option>
-              <option value="+267">🇧🇼 +267</option>
-              <option value="+263">🇿🇼 +263</option>
-              <option value="+260">🇿🇲 +260</option>
-              <option value="+265">🇲🇼 +265</option>
-              <option value="+268">🇸🇿 +268</option>
-              <option value="+266">🇱🇸 +266</option>
-              <option value="+264">🇳🇦 +264</option>
-              <option value="+243">🇨🇩 +243</option>
-              <option value="+242">🇨🇬 +242</option>
-              <option value="+241">🇬🇦 +241</option>
-              <option value="+240">🇬🇶 +240</option>
-              <option value="+237">🇨🇲 +237</option>
-              <option value="+236">🇨🇫 +236</option>
-              <option value="+235">🇹🇩 +235</option>
-              <option value="+229">🇧🇯 +229</option>
-              <option value="+228">🇹🇬 +228</option>
-              <option value="+227">🇳🇪 +227</option>
-              <option value="+226">🇧🇫 +226</option>
-              <option value="+225">🇨🇮 +225</option>
-              <option value="+224">🇬🇳 +224</option>
-              <option value="+223">🇲🇱 +223</option>
-              <option value="+222">🇲🇷 +222</option>
-              <option value="+221">🇸🇳 +221</option>
-              <option value="+220">🇬🇲 +220</option>
-              <option value="+218">🇱🇾 +218</option>
-              <option value="+216">🇹🇳 +216</option>
-              <option value="+213">🇩🇿 +213</option>
-              <option value="+211">🇸🇸 +211</option>
-              <option value="+249">🇸🇩 +249</option>
-              <option value="+252">🇸🇴 +252</option>
-              <option value="+253">🇩🇯 +253</option>
-              <option value="+257">🇧🇮 +257</option>
-              <option value="+258">🇲🇿 +258</option>
-              <option value="+261">🇲🇬 +261</option>
-              <option value="+262">🇷🇪 +262</option>
             </select>
             <input type="tel" id="phone" placeholder="Phone number" required>
           </div>
@@ -696,7 +657,7 @@
     </div>
 
     <div class="footer">
-      <span style="color: var(--text-secondary); font-size: 0.75rem;">©2023-2099 Confronter Tech Wizard Gains</span>
+      <span style="color: var(--text-secondary); font-size: 0.75rem;">©2023-2029 Confronter Tech Wizard Gains</span>
     </div>
   </div>
 
@@ -707,7 +668,6 @@
       <p>You joined <strong>Confronter Tech Wizard Gains</strong></p>
       <div class="timer" id="redirectTimer">3</div>
       <p style="font-size: 0.8rem; color: var(--text-secondary);">Redirecting to WhatsApp group...</p>
-      <!-- NEW: Action buttons -->
       <div class="overlay-actions">
         <a href="#" class="btn" id="joinWhatsAppBtn" target="_blank">
           <i class="fab fa-whatsapp"></i> Join WhatsApp Now
@@ -792,8 +752,9 @@
     const vcfDownloadBtn = document.getElementById('vcfDownloadBtn');
     const joinWhatsAppBtn = document.getElementById('joinWhatsAppBtn');
 
+    // NO HARDCODED 700 — loaded from /api/settings
     let groupLink = 'https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1';
-    let memberLimit = 700;
+    let memberLimit = 500; // temporary until settings load
     let redirectTimer = null;
 
     async function loadSettings() {
@@ -801,11 +762,13 @@
         const res = await fetch('/api/settings');
         const data = await res.json();
         if (data.success) {
-          memberLimit = data.memberLimit || 700;
+          memberLimit = data.memberLimit || 500;
           if (data.groupLink) {
             groupLink = data.groupLink;
             whatsappBtn.href = groupLink;
           }
+          // Refresh count display with correct limit
+          loadCount();
         }
       } catch (e) {}
     }
@@ -837,18 +800,7 @@
         if (data.success && data.hasUpload && data.visible) {
           vcfCard.classList.add('show');
           vcfFilename.textContent = data.filename || 'Contact Card';
-          vcfMeta.textContent = 'VCF file • ' + (data.fileSize || 'Unknown size');
-          if (data.expiryDate) {
-            const daysLeft = Math.ceil((new Date(data.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-            vcfExpiry.textContent = daysLeft > 0 ? '⏳ Expires in ' + daysLeft + ' days' : '⚠️ Expired';
-            if (daysLeft <= 0) {
-              vcfDownloadBtn.style.opacity = '0.4';
-              vcfDownloadBtn.style.pointerEvents = 'none';
-              vcfDownloadBtn.innerHTML = '<i class="fas fa-lock"></i> Expired';
-            }
-          } else {
-            vcfExpiry.textContent = '';
-          }
+          vcfMeta.textContent = 'VCF file • Available';
         } else {
           vcfCard.classList.remove('show');
         }
@@ -888,24 +840,18 @@
     phoneInput.addEventListener('input', () => { clearTimeout(checkTimeout); checkTimeout = setTimeout(checkDup, 500); });
     emailInput.addEventListener('input', () => { clearTimeout(checkTimeout); checkTimeout = setTimeout(checkDup, 500); });
 
-    // NEW: Reset form to add another number
+    // Reset form to add another number
     function resetForm() {
-      // Clear timer
       if (redirectTimer) {
         clearInterval(redirectTimer);
         redirectTimer = null;
       }
-      // Hide overlay
       successOverlay.classList.remove('show');
-      // Reset form
       form.reset();
-      // Reset WhatsApp button
       whatsappBtn.classList.remove('active');
       whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Join WhatsApp Group <i class="fas fa-lock lock-icon"></i>';
-      // Clear inputs
       document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
       document.querySelectorAll('.error-msg').forEach(el => el.classList.remove('show'));
-      // Reload count
       loadCount();
     }
 
@@ -938,19 +884,13 @@
         const data = await res.json();
 
         if (data.success) {
-          // Update group link from server response if provided
-          if (data.groupLink) {
-            groupLink = data.groupLink;
-          }
+          if (data.groupLink) groupLink = data.groupLink;
 
-          // Speak success message
           speakSuccess();
 
-          // Activate WhatsApp button
           whatsappBtn.classList.add('active');
           whatsappBtn.innerHTML = '<i class="fab fa-whatsapp"></i> Join WhatsApp Group';
 
-          // Set Join Now button link
           joinWhatsAppBtn.href = groupLink;
 
           successOverlay.classList.add('show');
@@ -962,7 +902,6 @@
             if (sec <= 0) {
               clearInterval(redirectTimer);
               redirectTimer = null;
-              // Redirect to WhatsApp group after speech
               window.location.href = groupLink;
             }
           }, 1000);
