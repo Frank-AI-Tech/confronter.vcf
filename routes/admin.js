@@ -411,7 +411,31 @@ router.post('/delete-vcf', async (req, res) => {
     files.forEach(f => {
       try { fs.unlinkSync(path.join(uploadsDir, f)); } catch (e) {}
     });
+// Live count refresh — matches form page exactly
+async function refreshStats() {
+  try {
+    const res = await fetch('/api/members/count');
+    const data = await res.json();
+    if (data.success) {
+      const count = data.count;
+      const limit = memberLimit;
+      const remaining = Math.max(0, limit - count);
+      const pct = Math.round((count / limit) * 100);
 
+      document.getElementById('statTotal').textContent = count;
+      document.getElementById('statRemaining').textContent = remaining;
+      document.getElementById('statCapacity').textContent = pct + '%';
+      document.getElementById('progressText').textContent = count + ' / ' + limit;
+      document.getElementById('progressBar').style.width = pct + '%';
+    }
+  } catch (e) {}
+}
+
+// Refresh every 10 seconds to stay in sync with form
+setInterval(refreshStats, 10000);
+refreshStats();
+
+  
     // Also hide VCF from form
     await setSetting('vcfVisible', false);
 
