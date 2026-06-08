@@ -296,6 +296,7 @@
       gap: 10px;
       margin-bottom: 16px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .filter-bar {
@@ -395,6 +396,29 @@
     .actions .verify:hover { color: var(--success); background: rgba(0,255,136,0.08); }
     .actions .edit:hover { color: var(--info); background: rgba(59,130,246,0.08); }
     .actions .delete:hover { color: var(--error); background: rgba(255,68,68,0.08); }
+
+    /* Checkbox styles */
+    .checkbox-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .checkbox-wrap input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--text);
+      cursor: pointer;
+    }
+    .checkbox-wrap label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .selected-count {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
 
     .pagination {
       display: flex;
@@ -617,7 +641,7 @@
           <span><%= totalCount %> / 700</span>
         </div>
         <div class="progress-track">
-          <div class="progress-fill" style="width: <%= (totalCount / 700) * 100 %>%"></div>
+          <div class="progress-fill" style="width: <%= (totalCount / 700) * 100 %>"></div>
         </div>
       </div>
 
@@ -628,6 +652,7 @@
         <div class="vcf-upload" id="dropZone">
           <i class="fas fa-cloud-arrow-up"></i>
           <p>Click or drop a .vcf file here to upload</p>
+          <p style="font-size: 0.75rem; margin-top: 6px; color: var(--text-secondary);">This VCF will be available for download in the main registration form</p>
           <input type="file" id="vcfFile" accept=".vcf,text/vcard" onchange="uploadVCF(this)">
         </div>
         <% } else { %>
@@ -636,7 +661,7 @@
             <i class="fas fa-file-lines" style="color: var(--success);"></i>
             <div>
               <div class="filename"><%= vcfStatus.filename %></div>
-              <div class="meta">Uploaded VCF file</div>
+              <div class="meta">Uploaded VCF file &bull; Visible to users on form</div>
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -657,12 +682,26 @@
       </div>
 
       <div class="bulk-actions">
+        <div class="checkbox-wrap">
+          <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+          <label for="selectAll">Select All</label>
+        </div>
+        <button class="btn btn-success" onclick="bulkVerify()" id="bulkVerifyBtn" disabled>
+          <i class="fas fa-check-double"></i> Approve Selected
+        </button>
+        <button class="btn btn-danger" onclick="bulkUnverify()" id="bulkUnverifyBtn" disabled>
+          <i class="fas fa-times-circle"></i> Unverify Selected
+        </button>
+        <button class="btn btn-danger" onclick="bulkDelete()" id="bulkDeleteBtn" disabled>
+          <i class="fas fa-trash"></i> Delete Selected
+        </button>
         <button class="btn btn-success" onclick="markAllVerify()">
-          <i class="fas fa-check-double"></i> Mark All Verified
+          <i class="fas fa-check-double"></i> Approve ALL
         </button>
         <button class="btn btn-danger" onclick="markAllUnverify()">
-          <i class="fas fa-times-circle"></i> Mark All Unverified
+          <i class="fas fa-times-circle"></i> Unverify ALL
         </button>
+        <span class="selected-count" id="selectedCount">0 selected</span>
       </div>
 
       <div class="filter-bar">
@@ -684,6 +723,7 @@
         <table>
           <thead>
             <tr>
+              <th><input type="checkbox" id="selectAllHeader" onchange="toggleSelectAll()"></th>
               <th>#</th>
               <th>Member</th>
               <th>Phone</th>
@@ -694,10 +734,11 @@
           </thead>
           <tbody id="membersTable">
             <% if (members.length === 0) { %>
-              <tr><td colspan="6"><div class="empty"><i class="fas fa-users"></i><h3>No members</h3><p>Members appear here once registered.</p></div></td></tr>
+              <tr><td colspan="7"><div class="empty"><i class="fas fa-users"></i><h3>No members</h3><p>Members appear here once registered.</p></div></td></tr>
             <% } else { %>
               <% members.forEach((m, i) => { %>
                 <tr data-id="<%= m._id %>">
+                  <td><input type="checkbox" class="member-checkbox" value="<%= m._id %>" onchange="updateSelection()"></td>
                   <td><%= i + 1 %></td>
                   <td>
                     <div class="member-name"><%= m.fullName %></div>
@@ -818,6 +859,7 @@
     const password = '<%= password %>';
     let currentPage = 1;
     let totalPages = 1;
+    let selectedIds = new Set();
 
     // Theme
     const themeToggle = document.getElementById('themeToggle');
@@ -868,7 +910,7 @@
         const res = await fetch('/admin/upload-vcf', { method: 'POST', body: formData });
         const data = await res.json();
         if (data.success) {
-          showToast('VCF uploaded successfully');
+          showToast('VCF uploaded successfully — now visible on main form');
           setTimeout(() => location.reload(), 1000);
         } else {
           showToast(data.message, true);
@@ -888,7 +930,7 @@
         const data = await res.json();
         if (data.success) {
           document.getElementById('vcfToggle').classList.toggle('on', data.visible);
-          showToast(data.visible ? 'VCF visible to users' : 'VCF hidden from users');
+          showToast(data.visible ? 'VCF visible to users on form' : 'VCF hidden from users');
         }
       } catch (e) {
         showToast('Toggle failed', true);
@@ -897,10 +939,126 @@
 
     async function deleteVCF() {
       if (!confirm('Remove uploaded VCF?')) return;
-      showToast('Use Replace to change the file', true);
+      try {
+        const res = await fetch('/admin/delete-vcf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast('VCF removed');
+          setTimeout(() => location.reload(), 1000);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Remove failed', true);
+      }
     }
 
-    // Mark All Verified
+    // ===== BULK SELECTION =====
+    function toggleSelectAll() {
+      const checkboxes = document.querySelectorAll('.member-checkbox');
+      const selectAll = document.getElementById('selectAll').checked;
+      const selectAllHeader = document.getElementById('selectAllHeader');
+      selectAllHeader.checked = selectAll;
+
+      checkboxes.forEach(cb => {
+        cb.checked = selectAll;
+        if (selectAll) selectedIds.add(cb.value);
+        else selectedIds.delete(cb.value);
+      });
+      updateSelectionUI();
+    }
+
+    function updateSelection() {
+      selectedIds.clear();
+      document.querySelectorAll('.member-checkbox:checked').forEach(cb => {
+        selectedIds.add(cb.value);
+      });
+      const allBoxes = document.querySelectorAll('.member-checkbox');
+      const checkedBoxes = document.querySelectorAll('.member-checkbox:checked');
+      document.getElementById('selectAll').checked = allBoxes.length > 0 && allBoxes.length === checkedBoxes.length;
+      document.getElementById('selectAllHeader').checked = allBoxes.length > 0 && allBoxes.length === checkedBoxes.length;
+      updateSelectionUI();
+    }
+
+    function updateSelectionUI() {
+      const count = selectedIds.size;
+      document.getElementById('selectedCount').textContent = count + ' selected';
+      document.getElementById('bulkVerifyBtn').disabled = count === 0;
+      document.getElementById('bulkUnverifyBtn').disabled = count === 0;
+      document.getElementById('bulkDeleteBtn').disabled = count === 0;
+    }
+
+    async function bulkVerify() {
+      if (selectedIds.size === 0) return;
+      if (!confirm('Verify ' + selectedIds.size + ' selected member(s)?')) return;
+      try {
+        const res = await fetch('/admin/api/members/bulk-verify?password=' + encodeURIComponent(password), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: Array.from(selectedIds) })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          selectedIds.clear();
+          loadMembers(currentPage);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Bulk verify failed', true);
+      }
+    }
+
+    async function bulkUnverify() {
+      if (selectedIds.size === 0) return;
+      if (!confirm('Unverify ' + selectedIds.size + ' selected member(s)?')) return;
+      try {
+        const res = await fetch('/admin/api/members/bulk-unverify?password=' + encodeURIComponent(password), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: Array.from(selectedIds) })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          selectedIds.clear();
+          loadMembers(currentPage);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Bulk unverify failed', true);
+      }
+    }
+
+    async function bulkDelete() {
+      if (selectedIds.size === 0) return;
+      if (!confirm('DELETE ' + selectedIds.size + ' selected member(s) permanently? This cannot be undone.')) return;
+      try {
+        const res = await fetch('/admin/api/members/bulk-delete?password=' + encodeURIComponent(password), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: Array.from(selectedIds) })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(data.message);
+          selectedIds.clear();
+          loadMembers(currentPage);
+        } else {
+          showToast(data.message, true);
+        }
+      } catch (e) {
+        showToast('Bulk delete failed', true);
+      }
+    }
+
+    // Mark ALL Verified
     async function markAllVerify() {
       if (!confirm('Mark ALL members as verified?')) return;
       try {
@@ -920,7 +1078,7 @@
       }
     }
 
-    // Mark All Unverified
+    // Mark ALL Unverified
     async function markAllUnverify() {
       if (!confirm('Mark ALL members as unverified?')) return;
       try {
@@ -954,6 +1112,10 @@
           document.getElementById('totalPages').textContent = totalPages || 1;
           document.getElementById('prevBtn').disabled = currentPage <= 1;
           document.getElementById('nextBtn').disabled = currentPage >= totalPages || totalPages === 0;
+          selectedIds.clear();
+          updateSelectionUI();
+          document.getElementById('selectAll').checked = false;
+          document.getElementById('selectAllHeader').checked = false;
         }
       } catch (e) {
         showToast('Failed to load', true);
@@ -963,22 +1125,24 @@
     function renderMembers(members) {
       const tbody = document.getElementById('membersTable');
       if (members.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><i class="fas fa-users"></i><h3>No members found</h3><p>Try adjusting filters.</p></div></td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7"><div class="empty"><i class="fas fa-users"></i><h3>No members found</h3><p>Try adjusting filters.</p></div></td></tr>';
         return;
       }
       tbody.innerHTML = members.map((m, i) => {
         const d = new Date(m.createdAt);
         const notesHtml = m.notes ? '<div style="font-size:0.7rem;color:var(--text-secondary);margin-top:2px;font-style:italic;"><i class="fas fa-note-sticky"></i> ' + m.notes + '</div>' : '';
+        const isSelected = selectedIds.has(m._id);
         return '<tr data-id="' + m._id + '">' +
+          '<td><input type="checkbox" class="member-checkbox" value="' + m._id + '" ' + (isSelected ? 'checked' : '') + ' onchange="updateSelection()"></td>' +
           '<td>' + ((currentPage-1)*50 + i + 1) + '</td>' +
           '<td><div class="member-name">' + m.fullName + '</div><div class="member-email">' + m.email + '</div>' + notesHtml + '</td>' +
           '<td class="member-phone">' + m.formattedPhone + '</td>' +
           '<td><span class="badge ' + (m.verified ? 'badge-verified' : 'badge-unverified') + '"><i class="fas ' + (m.verified ? 'fa-check-circle' : 'fa-circle') + '"></i> ' + (m.verified ? 'Verified' : 'Pending') + '</span></td>' +
           '<td>' + d.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + '<br><span style="color:var(--text-secondary);font-size:0.7rem;">' + d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}) + '</span></td>' +
           '<td><div class="actions">' +
-            '<button class="verify" onclick="toggleVerify('' + m._id + '',this)" title="' + (m.verified ? 'Unverify' : 'Verify') + '"><i class="fas ' + (m.verified ? 'fa-times-circle' : 'fa-check-circle') + '"></i></button>' +
-            '<button class="edit" onclick="openEdit('' + m._id + '')" title="Edit"><i class="fas fa-pen"></i></button>' +
-            '<button class="delete" onclick="deleteMember('' + m._id + '',this)" title="Delete"><i class="fas fa-trash"></i></button>' +
+            '<button class="verify" onclick="toggleVerify(\'' + m._id + '\',this)" title="' + (m.verified ? 'Unverify' : 'Verify') + '"><i class="fas ' + (m.verified ? 'fa-times-circle' : 'fa-check-circle') + '"></i></button>' +
+            '<button class="edit" onclick="openEdit(\'' + m._id + '\')" title="Edit"><i class="fas fa-pen"></i></button>' +
+            '<button class="delete" onclick="deleteMember(\'' + m._id + '\',this)" title="Delete"><i class="fas fa-trash"></i></button>' +
           '</div></td>' +
         '</tr>';
       }).join('');
