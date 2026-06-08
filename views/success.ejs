@@ -110,7 +110,6 @@
   </div>
 
   <script>
-    // Theme
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon = document.getElementById('themeIcon');
     const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -124,7 +123,6 @@
       themeIcon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
     });
 
-    // Speech
     try {
       if ('speechSynthesis' in window) {
         const utterance = new SpeechSynthesisUtterance('You were verified successfully. Welcome to Confronter Tech Wizard Gains.');
@@ -135,7 +133,6 @@
       }
     } catch (e) { console.log('Speech not supported'); }
 
-    // Countdown
     let sec = 2;
     const t = document.getElementById('timer');
     setInterval(() => {
