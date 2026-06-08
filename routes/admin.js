@@ -10,7 +10,7 @@ const uploadsDir = path.join(__dirname, '..', 'uploads');
 
 async function getVcfStatus() {
   const files = fs.existsSync(uploadsDir) 
-    ? fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_')) 
+    ? fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_') && f.endsWith('.vcf')) 
     : [];
   const latest = files.sort().pop();
   const setting = await Settings.findOne({ key: 'vcfVisible' });
@@ -61,7 +61,7 @@ router.get('/api/members', async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const skip = (page - 1) * limit;
     const search = req.query.search || '';
-    const filter = req.query.filter || 'all'; // all, verified, unverified
+    const filter = req.query.filter || 'all';
 
     let query = {};
     if (search) {
@@ -82,7 +82,6 @@ router.get('/api/members', async (req, res) => {
       .limit(limit);
 
     const total = await Member.countDocuments(query);
-    const verifiedTotal = await Member.countDocuments({ ...query, verified: true });
 
     res.json({
       success: true,
@@ -92,11 +91,6 @@ router.get('/api/members', async (req, res) => {
         limit,
         total,
         pages: Math.ceil(total / limit)
-      },
-      stats: {
-        total,
-        verified: verifiedTotal,
-        unverified: total - verifiedTotal
       }
     });
   } catch (error) {
@@ -104,7 +98,7 @@ router.get('/api/members', async (req, res) => {
   }
 });
 
-// GET /admin/api/members/:id - Single member
+// GET /admin/api/members/:id
 router.get('/api/members/:id', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -185,6 +179,44 @@ router.patch('/api/members/:id/verify', async (req, res) => {
   }
 });
 
+// POST /admin/api/members/mark-all-verify - Mark ALL as verified
+router.post('/api/members/mark-all-verify', async (req, res) => {
+  const password = req.query.password || req.headers['x-admin-token'];
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const result = await Member.updateMany({}, { verified: true });
+    res.json({ 
+      success: true, 
+      message: `All ${result.modifiedCount} members marked as verified`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /admin/api/members/mark-all-unverify - Mark ALL as unverified
+router.post('/api/members/mark-all-unverify', async (req, res) => {
+  const password = req.query.password || req.headers['x-admin-token'];
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const result = await Member.updateMany({}, { verified: false });
+    res.json({ 
+      success: true, 
+      message: `All ${result.modifiedCount} members marked as unverified`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 // DELETE /admin/api/members/:id
 router.delete('/api/members/:id', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
@@ -256,8 +288,6 @@ router.get('/export-csv', async (req, res) => {
 
   try {
     const members = await Member.find().sort({ createdAt: -1 });
-
-    // CSV header
     let csv = 'ID,Full Name,Phone,Email,Country Code,Verified,Notes,Joined Date,IP Address\n';
 
     members.forEach(m => {
