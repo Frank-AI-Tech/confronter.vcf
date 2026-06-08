@@ -67,7 +67,7 @@ router.get('/', async (req, res) => {
       const vcfStatus = await getVcfStatus();
 
       // Fetch settings with defaults
-      const memberLimit = await getSetting('memberLimit', 700);
+      const memberLimit = await getSetting('memberLimit', 800);
       const groupLink = await getSetting('groupLink', '');
       const vcfExpiryDays = await getSetting('vcfExpiryDays', 30);
       const vcfDaysLeft = getVcfDaysLeft(vcfStatus.filename);
