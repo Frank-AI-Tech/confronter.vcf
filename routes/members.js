@@ -2,15 +2,19 @@ const express = require('express');
 const router = express.Router();
 const { parsePhoneNumberFromString, isValidPhoneNumber } = require('libphonenumber-js');
 const Member = require('../models/Member');
+const Settings = require('../models/Settings');
 
-const MEMBER_LIMIT = 800;
+// Dynamic member limit from database — NO HARDCODED VALUE
+async function getMemberLimit() {
+  const setting = await Settings.findOne({ key: 'memberLimit' });
+  return setting ? parseInt(setting.value) : 500;
+}
 
 // POST /api/members - Create new member
 router.post('/', async (req, res) => {
   try {
     const { fullName, phone, email, countryCode = '+1' } = req.body;
 
-    // Log incoming request for debugging
     console.log('Form submission:', { fullName, phone, email, countryCode });
 
     if (!fullName || !phone || !email) {
@@ -28,7 +32,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Clean phone number - remove spaces, dashes, parentheses
     const cleanPhone = phone.replace(/[\s\-\(\)\.]/g, '');
     const fullPhone = cleanPhone.startsWith('+') ? cleanPhone : countryCode + cleanPhone;
 
@@ -54,7 +57,6 @@ router.post('/', async (req, res) => {
 
     console.log('Parsed phone:', { formattedPhone, e164Phone });
 
-    // Check for duplicate by phone
     const existingByPhone = await Member.findOne({ phone: e164Phone });
     if (existingByPhone) {
       return res.status(409).json({
@@ -64,7 +66,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check for duplicate by email
     const existingByEmail = await Member.findOne({ email: email.toLowerCase() });
     if (existingByEmail) {
       return res.status(409).json({
@@ -74,16 +75,16 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Check member limit
+    // Check member limit — DYNAMIC FROM DB, NO HARDCODE
+    const MEMBER_LIMIT = await getMemberLimit();
     const memberCount = await Member.countDocuments();
     if (memberCount >= MEMBER_LIMIT) {
       return res.status(403).json({
         success: false,
-        message: `Group membership is full (${MEMBER_LIMIT}/${MEMBER_LIMIT})`
+        message: `Group membership is full (${memberCount}/${MEMBER_LIMIT})`
       });
     }
 
-    // Create member
     const member = new Member({
       fullName: fullName.trim(),
       phone: e164Phone,
@@ -102,6 +103,7 @@ router.post('/', async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Member registered successfully!',
+      groupLink: 'https://chat.whatsapp.com/G9qtX0Yuq61JjrklH8k803?s=cl&p=a&ilr=1',
       data: {
         id: member._id,
         fullName: member.fullName,
@@ -124,7 +126,6 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Return actual error message for debugging (remove in production)
     res.status(500).json({ 
       success: false, 
       message: 'Server error: ' + error.message 
@@ -132,9 +133,10 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/members/count
+// GET /api/members/count — DYNAMIC LIMIT FROM DB
 router.get('/count', async (req, res) => {
   try {
+    const MEMBER_LIMIT = await getMemberLimit();
     const count = await Member.countDocuments();
     res.json({
       success: true,
