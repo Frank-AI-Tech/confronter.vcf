@@ -34,7 +34,7 @@ const upload = multer({
       cb(new Error('Only VCF files are allowed'));
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB max
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 // Middleware
@@ -55,7 +55,6 @@ mongoose.connect(MONGODB_URI)
   .then(() => console.log('MongoDB Connected'))
   .catch(err => {
     console.error('MongoDB Error:', err.message);
-    console.log('Please set MONGODB_URI in .env');
   });
 
 // Routes
@@ -77,51 +76,72 @@ app.post('/admin/upload-vcf', upload.single('vcfFile'), (req, res) => {
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }
 
-  // Clean up old uploads, keep only the latest
-  const files = fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_'));
-  files.sort().forEach((f, i) => {
-    if (i < files.length - 1) fs.unlinkSync(path.join(uploadsDir, f));
-  });
+  // Clean old uploads
+  try {
+    const files = fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_'));
+    files.sort().forEach((f, i) => {
+      if (i < files.length - 1) {
+        try { fs.unlinkSync(path.join(uploadsDir, f)); } catch (e) {}
+      }
+    });
+  } catch (e) {}
 
-  res.json({
-    success: true,
-    message: 'VCF uploaded successfully',
-    filename: req.file.filename,
-    path: req.file.path
-  });
+  res.json({ success: true, message: 'VCF uploaded', filename: req.file.filename });
 });
 
-// Get uploaded VCF info
-app.get('/api/vcf-status', (req, res) => {
-  const files = fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_'));
-  const latest = files.sort().pop();
+// Get uploaded VCF info - FIXED
+app.get('/api/vcf-status', async (req, res) => {
+  try {
+    let files = [];
+    try {
+      files = fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_') && f.endsWith('.vcf'));
+    } catch (e) { files = []; }
 
-  // Check settings from query or default
-  const Settings = require('./models/Settings');
-  Settings.findOne({ key: 'vcfVisible' }).then(setting => {
+    const latest = files.sort().pop();
+
+    let visible = false;
+    try {
+      const Settings = require('./models/Settings');
+      const setting = await Settings.findOne({ key: 'vcfVisible' });
+      visible = setting ? setting.value : false;
+    } catch (e) { visible = false; }
+
     res.json({
       success: true,
       hasUpload: !!latest,
       filename: latest || null,
-      visible: setting ? setting.value : false
+      visible: visible
     });
-  }).catch(() => {
-    res.json({ success: true, hasUpload: !!latest, filename: latest || null, visible: false });
-  });
+  } catch (error) {
+    console.error('VCF status error:', error);
+    res.json({ success: true, hasUpload: false, filename: null, visible: false });
+  }
 });
 
 // Download uploaded VCF
 app.get('/download/vcf', (req, res) => {
-  const files = fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_'));
-  const latest = files.sort().pop();
+  try {
+    let files = [];
+    try {
+      files = fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_') && f.endsWith('.vcf'));
+    } catch (e) { files = []; }
 
-  if (!latest) {
-    return res.status(404).json({ success: false, message: 'No VCF file available' });
+    const latest = files.sort().pop();
+    if (!latest) {
+      return res.status(404).json({ success: false, message: 'No VCF available' });
+    }
+
+    const filePath = path.join(uploadsDir, latest);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'File not found' });
+    }
+
+    res.setHeader('Content-Type', 'text/vcard');
+    res.setHeader('Content-Disposition', 'attachment; filename="Confronter_Tech_Wizard_Gains.vcf"');
+    res.sendFile(filePath);
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
   }
-
-  res.setHeader('Content-Type', 'text/vcard');
-  res.setHeader('Content-Disposition', 'attachment; filename="Confronter_Tech_Wizard_Gains.vcf"');
-  res.sendFile(path.join(uploadsDir, latest));
 });
 
 // Pages
@@ -131,7 +151,11 @@ app.get('/success', (req, res) => res.render('success'));
 
 // Health
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'OK',
+    mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // 404
@@ -147,6 +171,4 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Form: http://localhost:${PORT}/form`);
-  console.log(`Admin: http://localhost:${PORT}/admin`);
 });
