@@ -3,7 +3,7 @@ const router = express.Router();
 const { parsePhoneNumberFromString, isValidPhoneNumber } = require('libphonenumber-js');
 const Member = require('../models/Member');
 
-const MEMBER_LIMIT = 700;
+const MEMBER_LIMIT = 800;
 
 // POST /api/members - Create new member
 router.post('/', async (req, res) => {
