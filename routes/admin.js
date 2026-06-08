@@ -8,9 +8,27 @@ const Settings = require('../models/Settings');
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'ConfronterAdmin2024!';
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 
+// ─── Helpers ───────────────────────────────────────────────
+
+async function getSetting(key, defaultValue) {
+  const setting = await Settings.findOne({ key });
+  return setting ? setting.value : defaultValue;
+}
+
+async function setSetting(key, value) {
+  let setting = await Settings.findOne({ key });
+  if (setting) {
+    setting.value = value;
+    setting.updatedAt = new Date();
+    await setting.save();
+  } else {
+    await Settings.create({ key, value });
+  }
+}
+
 async function getVcfStatus() {
-  const files = fs.existsSync(uploadsDir) 
-    ? fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_') && f.endsWith('.vcf')) 
+  const files = fs.existsSync(uploadsDir)
+    ? fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_') && f.endsWith('.vcf'))
     : [];
   const latest = files.sort().pop();
   const setting = await Settings.findOne({ key: 'vcfVisible' });
@@ -21,7 +39,23 @@ async function getVcfStatus() {
   };
 }
 
-// GET /admin - Login or Dashboard
+function getVcfDaysLeft(filename) {
+  if (!filename) return 30;
+  try {
+    const timestamp = parseInt(filename.match(/master_(\d+)\.vcf/)?.[1]);
+    if (!timestamp) return 30;
+    const fileDate = new Date(timestamp);
+    const now = new Date();
+    const expiryDays = 30; // default expiry
+    const diffDays = Math.ceil((fileDate.getTime() + expiryDays * 86400000 - now.getTime()) / 86400000);
+    return Math.max(0, diffDays);
+  } catch (e) {
+    return 30;
+  }
+}
+
+// ─── GET /admin - Login or Dashboard ───────────────────────
+
 router.get('/', async (req, res) => {
   const password = req.query.password;
 
@@ -32,16 +66,26 @@ router.get('/', async (req, res) => {
       const verifiedCount = await Member.countDocuments({ verified: true });
       const vcfStatus = await getVcfStatus();
 
-      res.render('admin-dashboard', { 
-        members, 
-        totalCount, 
+      // Fetch settings with defaults
+      const memberLimit = await getSetting('memberLimit', 700);
+      const groupLink = await getSetting('groupLink', '');
+      const vcfExpiryDays = await getSetting('vcfExpiryDays', 30);
+      const vcfDaysLeft = getVcfDaysLeft(vcfStatus.filename);
+
+      res.render('admin-dashboard', {
+        members,
+        totalCount,
         verifiedCount,
-        memberLimit: 700,              // <-- FIXED: was `limit`, now `memberLimit`
-        remaining: Math.max(0, 700 - totalCount),
+        memberLimit,
+        remaining: Math.max(0, memberLimit - totalCount),
         password,
-        vcfStatus
+        vcfStatus,
+        groupLink,
+        vcfExpiryDays,
+        vcfDaysLeft
       });
     } catch (error) {
+      console.error('Admin dashboard error:', error);
       res.status(500).render('error', { message: 'Server error' });
     }
   } else {
@@ -49,7 +93,8 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /admin/api/members
+// ─── GET /admin/api/members ─────────────────────────────────
+
 router.get('/api/members', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -98,7 +143,8 @@ router.get('/api/members', async (req, res) => {
   }
 });
 
-// GET /admin/api/members/:id
+// ─── GET /admin/api/members/:id ─────────────────────────────
+
 router.get('/api/members/:id', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -114,7 +160,8 @@ router.get('/api/members/:id', async (req, res) => {
   }
 });
 
-// PUT /admin/api/members/:id - Update member
+// ─── PUT /admin/api/members/:id ─────────────────────────────
+
 router.put('/api/members/:id', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -155,7 +202,8 @@ router.put('/api/members/:id', async (req, res) => {
   }
 });
 
-// PATCH /admin/api/members/:id/verify - Toggle verified status
+// ─── PATCH /admin/api/members/:id/verify ──────────────────
+
 router.patch('/api/members/:id/verify', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -169,8 +217,8 @@ router.patch('/api/members/:id/verify', async (req, res) => {
     member.verified = !member.verified;
     await member.save();
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       verified: member.verified,
       message: member.verified ? 'Member verified' : 'Member unverified'
     });
@@ -179,7 +227,8 @@ router.patch('/api/members/:id/verify', async (req, res) => {
   }
 });
 
-// POST /admin/api/members/mark-all-verify - Mark ALL as verified
+// ─── POST /admin/api/members/mark-all-verify ──────────────
+
 router.post('/api/members/mark-all-verify', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -188,8 +237,8 @@ router.post('/api/members/mark-all-verify', async (req, res) => {
 
   try {
     const result = await Member.updateMany({}, { verified: true });
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: `All ${result.modifiedCount} members marked as verified`,
       modifiedCount: result.modifiedCount
     });
@@ -198,7 +247,8 @@ router.post('/api/members/mark-all-verify', async (req, res) => {
   }
 });
 
-// POST /admin/api/members/mark-all-unverify - Mark ALL as unverified
+// ─── POST /admin/api/members/mark-all-unverify ────────────
+
 router.post('/api/members/mark-all-unverify', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -207,8 +257,8 @@ router.post('/api/members/mark-all-unverify', async (req, res) => {
 
   try {
     const result = await Member.updateMany({}, { verified: false });
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: `All ${result.modifiedCount} members marked as unverified`,
       modifiedCount: result.modifiedCount
     });
@@ -217,7 +267,8 @@ router.post('/api/members/mark-all-unverify', async (req, res) => {
   }
 });
 
-// DELETE /admin/api/members/:id
+// ─── DELETE /admin/api/members/:id ─────────────────────────
+
 router.delete('/api/members/:id', async (req, res) => {
   const password = req.query.password || req.headers['x-admin-token'];
   if (password !== ADMIN_PASSWORD) {
@@ -231,6 +282,95 @@ router.delete('/api/members/:id', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+// ─── BULK OPERATIONS ───────────────────────────────────────
+
+// POST /admin/api/members/bulk-verify
+router.post('/api/members/bulk-verify', async (req, res) => {
+  const password = req.query.password || req.headers['x-admin-token'];
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'No IDs provided' });
+    }
+    const result = await Member.updateMany({ _id: { $in: ids } }, { verified: true });
+    res.json({ success: true, message: `${result.modifiedCount} member(s) verified` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /admin/api/members/bulk-unverify
+router.post('/api/members/bulk-unverify', async (req, res) => {
+  const password = req.query.password || req.headers['x-admin-token'];
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'No IDs provided' });
+    }
+    const result = await Member.updateMany({ _id: { $in: ids } }, { verified: false });
+    res.json({ success: true, message: `${result.modifiedCount} member(s) unverified` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /admin/api/members/bulk-delete
+router.post('/api/members/bulk-delete', async (req, res) => {
+  const password = req.query.password || req.headers['x-admin-token'];
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'No IDs provided' });
+    }
+    const result = await Member.deleteMany({ _id: { $in: ids } });
+    res.json({ success: true, message: `${result.deletedCount} member(s) deleted` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ─── SETTINGS ──────────────────────────────────────────────
+
+// PUT /admin/api/settings
+router.put('/api/settings', async (req, res) => {
+  const password = req.body.password || req.query.password || req.headers['x-admin-token'];
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const { memberLimit, groupLink, vcfExpiryDays } = req.body;
+
+    if (memberLimit !== undefined) {
+      await setSetting('memberLimit', parseInt(memberLimit));
+    }
+    if (groupLink !== undefined) {
+      await setSetting('groupLink', groupLink);
+    }
+    if (vcfExpiryDays !== undefined) {
+      await setSetting('vcfExpiryDays', parseInt(vcfExpiryDays));
+    }
+
+    res.json({ success: true, message: 'Settings updated' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ─── VCF ───────────────────────────────────────────────────
 
 // Toggle VCF visibility
 router.post('/toggle-vcf', async (req, res) => {
@@ -256,6 +396,32 @@ router.post('/toggle-vcf', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
+// POST /admin/delete-vcf
+router.post('/delete-vcf', async (req, res) => {
+  const password = req.body.password || req.query.password;
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
+  }
+
+  try {
+    const files = fs.existsSync(uploadsDir)
+      ? fs.readdirSync(uploadsDir).filter(f => f.startsWith('master_') && f.endsWith('.vcf'))
+      : [];
+    files.forEach(f => {
+      try { fs.unlinkSync(path.join(uploadsDir, f)); } catch (e) {}
+    });
+
+    // Also hide VCF from form
+    await setSetting('vcfVisible', false);
+
+    res.json({ success: true, message: 'VCF removed' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ─── EXPORTS ───────────────────────────────────────────────
 
 // GET /admin/export - JSON export
 router.get('/export', async (req, res) => {
